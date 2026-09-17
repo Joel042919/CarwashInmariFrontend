@@ -1,98 +1,599 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  useColorScheme,
+  Pressable,
+  RefreshControl,
+  Image,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '@/context/AuthContext';
+import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Colors, BorderRadius, Spacing, MaxContentWidth } from '@/constants/theme';
+import { reclamosService } from '@/services/reclamos.service';
+import { clienteService } from '@/services/cliente.service';
+import { Reclamo, HistorialClienteUnificado } from '@/types';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+export default function DashboardScreen() {
+  const scheme = useColorScheme();
+  const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const router = useRouter();
+  const { user, token, isAuthenticated, isAdmin } = useAuth();
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+  const [reclamos, setReclamos] = useState<Reclamo[]>([]);
+  const [historial, setHistorial] = useState<HistorialClienteUnificado | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState('todos');
+
+  const loadData = async () => {
+    // Protección contra llamadas sin token
+    if (!isAuthenticated || !token) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      if (isAdmin) {
+        const data = await reclamosService.getAdminReclamos();
+        setReclamos(data);
+      } else {
+        const [recs, hist] = await Promise.all([
+          reclamosService.getMisReclamos().catch(() => []),
+          clienteService.getHistorial().catch(() => null),
+        ]);
+        setReclamos(recs);
+        if (hist) setHistorial(hist);
+      }
+    } catch (err) {
+      console.error('Error cargando datos de dashboard:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      loadData();
+    }
+  }, [isAuthenticated, token, isAdmin]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadData();
+  };
+
+  const reclamosPendientes = reclamos.filter(
+    (r) => r.estado === 'registrado' || r.estado === 'en_revision'
+  ).length;
+
+  const ultimaReserva = historial?.reservas?.[0];
+  const ultimoPago = historial?.pagos?.[0];
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <ResponsiveLayout>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
+        <View style={styles.contentWrapper}>
+          {/* Header Title Section (Estilo Tableau de bord) */}
+          <View style={styles.topHeaderSection}>
+            <View>
+              <Text style={[styles.mainHeading, { color: theme.text }]}>
+                {isAdmin ? 'Panel de Administración' : 'Centro de Atención Vehicular'}
+              </Text>
+              <Text style={[styles.mainSubheading, { color: theme.textSecondary }]}>
+                {isAdmin
+                  ? 'Gestión integral operativa, supervisión de clientes y resolución de reclamos.'
+                  : 'Bienvenido a Carwash Inmari. Supervisa el estado de tu vehículo en tiempo real.'}
+              </Text>
+            </View>
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+            <View style={styles.categoryPillsRow}>
+              {(isAdmin
+                ? ['todos', 'servicios', 'admin-reclamos', 'pagos']
+                : ['todos', 'servicios', 'reclamos', 'pagos']
+              ).map((tab) => (
+                <Pressable
+                  key={tab}
+                  onPress={() => {
+                    setSelectedFilter(tab);
+                    if (tab === 'reclamos') router.push('/reclamos');
+                    if (tab === 'admin-reclamos') router.push('/admin-reclamos');
+                    if (tab === 'servicios' || tab === 'pagos') router.push('/historial');
+                  }}
+                  style={[
+                    styles.categoryPill,
+                    selectedFilter === tab
+                      ? { backgroundColor: theme.primary, borderColor: theme.primary }
+                      : { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+                  ]}>
+                  <Text
+                    style={[
+                      styles.categoryPillText,
+                      {
+                        color: selectedFilter === tab ? '#000000' : theme.textSecondary,
+                        fontWeight: selectedFilter === tab ? '800' : '600',
+                      },
+                    ]}>
+                    {tab === 'admin-reclamos' ? 'ADMIN RECLAMOS' : tab.toUpperCase()}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+          {/* HERO CAR CARD (Copiando el Hero de Volvo EX30 / BMW en capturas) */}
+          <Card style={styles.heroCard}>
+            <View style={styles.heroTopRow}>
+              <Badge
+                label={isAdmin ? 'Plataforma Administrativa' : 'Vehículo en Atención'}
+                status="completada"
+                showDot={true}
+              />
+              <View style={styles.ratingBadge}>
+                <Ionicons name="star" size={13} color="#f59e0b" />
+                <Text style={styles.ratingText}>4.98 Calidad</Text>
+              </View>
+            </View>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+            <View style={styles.heroContentRow}>
+              <View style={styles.heroInfoCol}>
+                <Text style={[styles.heroCarTitle, { color: theme.text }]}>
+                  {isAdmin ? 'Carwash Inmari Central' : 'Toyota Corolla Cross'}
+                </Text>
+                <Text style={[styles.heroCarSubtitle, { color: theme.textSecondary }]}>
+                  {isAdmin
+                    ? 'Supervisión en vivo de servicios, módulos y resolución de quejas'
+                    : 'Placa: T3A-456 • Lavado Premium & Secado Interior'}
+                </Text>
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+                <View style={styles.heroSpecTagsRow}>
+                  <View style={[styles.specTag, { backgroundColor: theme.surface }]}>
+                    <Ionicons name="shield-checkmark" size={14} color={theme.accent} />
+                    <Text style={[styles.specTagText, { color: theme.text }]}>
+                      Garantía 100%
+                    </Text>
+                  </View>
+                  <View style={[styles.specTag, { backgroundColor: theme.surface }]}>
+                    <Ionicons name="water" size={14} color={theme.sky} />
+                    <Text style={[styles.specTagText, { color: theme.text }]}>
+                      Cera Hidrofóbica
+                    </Text>
+                  </View>
+                  <View style={[styles.specTag, { backgroundColor: theme.surface }]}>
+                    <Ionicons name="sparkles" size={14} color="#f59e0b" />
+                    <Text style={[styles.specTagText, { color: theme.text }]}>
+                      Secado por Aire
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.heroActionRow}>
+                  {isAdmin ? (
+                    <Button
+                      title="Gestionar Reclamos"
+                      icon={<Ionicons name="arrow-forward" size={16} color="#ffffff" />}
+                      iconPosition="right"
+                      onPress={() => router.push('/admin-reclamos')}
+                    />
+                  ) : (
+                    <Button
+                      title="Radicar Reclamo con Foto"
+                      icon={<Ionicons name="camera" size={16} color="#ffffff" />}
+                      iconPosition="left"
+                      onPress={() => router.push('/reclamos')}
+                    />
+                  )}
+                  <Button
+                    title="Ver Historial"
+                    variant="secondary"
+                    onPress={() => router.push('/historial')}
+                  />
+                </View>
+              </View>
+
+              {/* Imagen elegante de auto estilizado */}
+              <View style={styles.heroImageWrapper}>
+                <Image
+                  source={{
+                    uri: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=800&q=80',
+                  }}
+                  style={styles.heroImage}
+                  resizeMode="cover"
+                />
+              </View>
+            </View>
+          </Card>
+
+          {/* FILA DE MÉTRICAS CLAVE (Estilo Bento Grid 3 cards) */}
+          <View style={styles.metricsRow}>
+            <Card style={styles.metricCard}>
+              <View style={[styles.metricIconBox, { backgroundColor: theme.surface }]}>
+                <Ionicons name="calendar-outline" size={22} color={theme.text} />
+              </View>
+              <Text style={[styles.metricNumber, { color: theme.text }]}>
+                {historial?.reservas?.length || (isAdmin ? 24 : 1)}
+              </Text>
+              <Text style={[styles.metricLabel, { color: theme.textSecondary }]}>
+                Reservas y atenciones
+              </Text>
+            </Card>
+
+            <Card style={styles.metricCard}>
+              <View style={[styles.metricIconBox, { backgroundColor: theme.surface }]}>
+                <Ionicons name="shield-checkmark-outline" size={22} color={theme.accent} />
+              </View>
+              <Text style={[styles.metricNumber, { color: theme.text }]}>
+                98%
+              </Text>
+              <Text style={[styles.metricLabel, { color: theme.textSecondary }]}>
+                Índice de satisfacción
+              </Text>
+            </Card>
+
+            <Pressable
+              style={{ flex: 1, minWidth: 140 }}
+              onPress={() => router.push(isAdmin ? '/admin-reclamos' : '/reclamos')}>
+              <Card style={styles.metricCard}>
+                <View style={[styles.metricIconBox, { backgroundColor: theme.surface }]}>
+                  <Ionicons name="chatbox-ellipses-outline" size={22} color={theme.danger} />
+                </View>
+                <Text style={[styles.metricNumber, { color: theme.text }]}>
+                  {reclamosPendientes}
+                </Text>
+                <Text style={[styles.metricLabel, { color: theme.textSecondary }]}>
+                  {isAdmin ? 'Reclamos por atender' : 'Reclamos en revisión'}
+                </Text>
+              </Card>
+            </Pressable>
+          </View>
+
+          {/* BENTO GRID: 3 COLUMNAS MODULARES (Sede, Cita/Reserva, Pago) */}
+          <View style={styles.bentoGrid}>
+            {/* Bento 1: Sede y Ubicación */}
+            <Card style={styles.bentoCard}>
+              <View style={styles.bentoHeader}>
+                <Text style={[styles.bentoTitle, { color: theme.text }]}>
+                  Bahía de Atención
+                </Text>
+                <Ionicons name="navigate-circle-outline" size={20} color={theme.textSecondary} />
+              </View>
+              <Text style={[styles.bentoSubtitle, { color: theme.textSecondary }]}>
+                Sede Central Carwash Inmari
+              </Text>
+
+              <View style={[styles.mapPlaceholder, { backgroundColor: theme.surface }]}>
+                <Ionicons name="location" size={28} color={theme.accent} />
+                <Text style={[styles.mapText, { color: theme.text }]}>
+                  Av. América Norte 1245, Trujillo
+                </Text>
+                <Text style={[styles.mapSubtext, { color: theme.textSecondary }]}>
+                  Bahía Techada BOX-01 • Hidrolavadoras 180 Bar
+                </Text>
+              </View>
+            </Card>
+
+            {/* Bento 2: Próxima Cita / Horario */}
+            <Card style={styles.bentoCard}>
+              <View style={styles.bentoHeader}>
+                <Text style={[styles.bentoTitle, { color: theme.text }]}>
+                  Atención Registrada
+                </Text>
+                <Ionicons name="time-outline" size={20} color={theme.textSecondary} />
+              </View>
+              <Text style={[styles.bentoSubtitle, { color: theme.textSecondary }]}>
+                {ultimaReserva ? `Placa: ${ultimaReserva.placa_vehiculo}` : 'Horario de programación'}
+              </Text>
+
+              <View style={styles.dateBlock}>
+                <View style={[styles.dateBigPill, { backgroundColor: theme.surface }]}>
+                  <Text style={[styles.dateDayNumber, { color: theme.text }]}>
+                    {ultimaReserva?.fecha_reserva ? ultimaReserva.fecha_reserva.slice(8, 10) : '17'}
+                  </Text>
+                  <Text style={[styles.dateMonthText, { color: theme.textSecondary }]}>
+                    SET. 2026
+                  </Text>
+                </View>
+
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                  <Text style={[styles.dateHourText, { color: theme.text }]}>
+                    {ultimaReserva ? `${ultimaReserva.hora_inicio.slice(0, 5)} - ${ultimaReserva.hora_fin.slice(0, 5)}` : '10:00 - 11:00 AM'}
+                  </Text>
+                  <Badge
+                    label={ultimaReserva?.estado || 'Finalizada'}
+                    status={ultimaReserva?.estado || 'completada'}
+                    size="sm"
+                  />
+                </View>
+              </View>
+            </Card>
+
+            {/* Bento 3: Método de Pago (Estilo Tarjeta Luxury en capturas) */}
+            <Card style={[styles.bentoCard, styles.paymentCard]}>
+              <View style={styles.bentoHeader}>
+                <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '700' }}>
+                  Comprobante y Pago
+                </Text>
+                <Ionicons name="card" size={20} color="#34d399" />
+              </View>
+
+              <Text style={{ color: '#94a3b8', fontSize: 12, marginTop: 4 }}>
+                {ultimoPago ? `Comprobante: ${ultimoPago.comprobante_interno}` : 'Comprobante interno emitido'}
+              </Text>
+
+              <View style={styles.paymentCardChipRow}>
+                <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '800', letterSpacing: 1.5 }}>
+                  **** **** 2468
+                </Text>
+                <Text style={{ color: '#34d399', fontSize: 18, fontWeight: '800' }}>
+                  S/ {ultimoPago?.monto ? ultimoPago.monto.toFixed(2) : '45.00'}
+                </Text>
+              </View>
+
+              <Button
+                title="Ver Mis Comprobantes"
+                variant="accent"
+                size="sm"
+                onPress={() => router.push('/historial')}
+                style={{ marginTop: Spacing.two }}
+              />
+            </Card>
+          </View>
+        </View>
+      </ScrollView>
+    </ResponsiveLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
+  scrollContainer: {
+    paddingVertical: Spacing.four,
     paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
+    paddingBottom: 90,
+  },
+  contentWrapper: {
+    width: '100%',
     maxWidth: MaxContentWidth,
   },
-  heroSection: {
+  topHeaderSection: {
+    marginBottom: Spacing.four,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: Spacing.three,
+  },
+  mainHeading: {
+    fontSize: 26,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  mainSubheading: {
+    fontSize: 13,
+    marginTop: 4,
+    maxWidth: 550,
+    lineHeight: 18,
+  },
+  categoryPillsRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  categoryPill: {
+    paddingVertical: 8,
+    paddingHorizontal: Spacing.three + 2,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  categoryPillText: {
+    fontSize: 11,
+    letterSpacing: 0.5,
+  },
+
+  // Hero Car Card
+  heroCard: {
+    padding: Spacing.five,
+    marginBottom: Spacing.four,
+  },
+  heroTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
+    marginBottom: Spacing.three,
+  },
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(245, 158, 11, 0.16)',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.full,
+  },
+  ratingText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#fbbf24',
+  },
+  heroContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
     gap: Spacing.four,
   },
-  title: {
+  heroInfoCol: {
+    flex: 1,
+    minWidth: 280,
+  },
+  heroCarTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    marginBottom: 4,
+  },
+  heroCarSubtitle: {
+    fontSize: 13,
+    marginBottom: Spacing.three,
+  },
+  heroSpecTagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+    marginBottom: Spacing.four,
+  },
+  specTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.md,
+  },
+  specTagText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  heroActionRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    flexWrap: 'wrap',
+  },
+  heroImageWrapper: {
+    width: 280,
+    height: 160,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: BorderRadius.lg,
+  },
+
+  // Metrics
+  metricsRow: {
+    flexDirection: 'row',
+    gap: Spacing.three,
+    marginBottom: Spacing.four,
+    flexWrap: 'wrap',
+  },
+  metricCard: {
+    flex: 1,
+    minWidth: 160,
+    padding: Spacing.four,
+    alignItems: 'flex-start',
+    marginBottom: 0,
+  },
+  metricIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.two,
+  },
+  metricNumber: {
+    fontSize: 26,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+    marginBottom: 2,
+  },
+  metricLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  // Bento Grid
+  bentoGrid: {
+    flexDirection: 'row',
+    gap: Spacing.three,
+    flexWrap: 'wrap',
+  },
+  bentoCard: {
+    flex: 1,
+    minWidth: 260,
+    padding: Spacing.four,
+    marginBottom: 0,
+  },
+  bentoHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  bentoTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  bentoSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+    marginBottom: Spacing.three,
+  },
+  mapPlaceholder: {
+    padding: Spacing.three,
+    borderRadius: BorderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.one,
+  },
+  mapText: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 6,
     textAlign: 'center',
   },
-  code: {
-    textTransform: 'uppercase',
+  mapSubtext: {
+    fontSize: 11,
+    marginTop: 2,
+    textAlign: 'center',
   },
-  stepContainer: {
+  dateBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.three,
-    alignSelf: 'stretch',
+    marginTop: Spacing.one,
+  },
+  dateBigPill: {
+    paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    minWidth: 70,
+  },
+  dateDayNumber: {
+    fontSize: 24,
+    fontWeight: '900',
+  },
+  dateMonthText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  dateHourText: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+
+  // Payment Card (Dark luxury)
+  paymentCard: {
+    backgroundColor: '#161920',
+    borderColor: '#232732',
+  },
+  paymentCardChipRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: Spacing.three,
   },
 });
