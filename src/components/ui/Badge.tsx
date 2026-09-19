@@ -17,9 +17,9 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   const normalized = (status || label).toLowerCase();
 
-  let bg = '#1c202a';
-  let text = '#94a3b8';
-  let dotColor = '#64748b';
+  let bg = '#232d28';
+  let text = '#a7b5ae';
+  let dotColor = '#7b8c84';
 
   if (
     normalized.includes('respondido') ||
@@ -29,42 +29,42 @@ export const Badge: React.FC<BadgeProps> = ({
     normalized.includes('entregad') ||
     normalized.includes('disponible')
   ) {
-    bg = 'rgba(16, 185, 129, 0.18)';
-    text = '#34d399';
-    dotColor = '#10b981';
+    bg = 'rgba(63,174,136,0.16)';
+    text = '#6fd0ae';
+    dotColor = '#3fae88';
   } else if (
     normalized.includes('en_revision') ||
     normalized.includes('en_proceso') ||
     normalized.includes('pendiente') ||
     normalized.includes('programada')
   ) {
-    bg = 'rgba(245, 158, 11, 0.18)';
-    text = '#fbbf24';
-    dotColor = '#f59e0b';
+    bg = 'rgba(217,164,65,0.16)';
+    text = '#e2b65c';
+    dotColor = '#d9a441';
   } else if (
     normalized.includes('registrado') ||
     normalized.includes('abierto')
   ) {
-    bg = 'rgba(56, 189, 248, 0.18)';
-    text = '#38bdf8';
-    dotColor = '#0284c7';
+    bg = 'rgba(95,168,211,0.16)';
+    text = '#86bfe3';
+    dotColor = '#5fa8d3';
   } else if (
     normalized.includes('cerrado') ||
     normalized.includes('cancelad') ||
     normalized.includes('anulad') ||
     normalized.includes('rechazad')
   ) {
-    bg = 'rgba(239, 68, 68, 0.18)';
-    text = '#f87171';
-    dotColor = '#ef4444';
+    bg = 'rgba(207,91,91,0.16)';
+    text = '#e58f8f';
+    dotColor = '#cf5b5b';
   } else if (normalized.includes('administrador')) {
-    bg = 'rgba(16, 185, 129, 0.22)';
-    text = '#10b981';
-    dotColor = '#10b981';
+    bg = 'rgba(63,174,136,0.16)';
+    text = '#6fd0ae';
+    dotColor = '#3fae88';
   } else if (normalized.includes('cliente')) {
-    bg = '#222734';
-    text = '#e2e8f0';
-    dotColor = '#10b981';
+    bg = '#26322d';
+    text = '#cfe0d8';
+    dotColor = '#3fae88';
   }
 
   const isSmall = size === 'sm';

@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
   Pressable,
+  ScrollView,
   StyleSheet,
   useWindowDimensions,
   useColorScheme,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
@@ -29,6 +30,17 @@ const NAV_ITEMS: NavItem[] = [
   { name: 'Historial', href: '/historial', iconName: 'car-sport-outline', activeIconName: 'car-sport' },
   { name: 'Reclamos', href: '/reclamos', iconName: 'chatbubble-ellipses-outline', activeIconName: 'chatbubble-ellipses', clientOnly: true },
   { name: 'Admin Reclamos', href: '/admin-reclamos', iconName: 'shield-checkmark-outline', activeIconName: 'shield-checkmark', adminOnly: true },
+  { name: 'Servicios', href: '/servicios', iconName: 'water-outline', activeIconName: 'water', clientOnly: true },
+  { name: 'Tienda', href: '/productos', iconName: 'cart-outline', activeIconName: 'cart', clientOnly: true },
+  { name: 'Admin Servicios', href: '/admin-servicios', iconName: 'construct-outline', activeIconName: 'construct', adminOnly: true },
+  { name: 'Admin Documentos', href: '/admin-documentos', iconName: 'document-text-outline', activeIconName: 'document-text', adminOnly: true },
+  { name: 'Admin Productos', href: '/admin-productos', iconName: 'cube-outline', activeIconName: 'cube', adminOnly: true },
+  { name: 'Admin Pedidos', href: '/admin-pedidos', iconName: 'receipt-outline', activeIconName: 'receipt', adminOnly: true },
+  { name: 'Reservas', href: '/reservas', iconName: 'calendar-outline', activeIconName: 'calendar', clientOnly: true },
+  { name: 'Vehículos', href: '/vehiculos', iconName: 'speedometer-outline', activeIconName: 'speedometer', clientOnly: true },
+  { name: 'Admin Reservas', href: '/admin-reservas', iconName: 'calendar-outline', activeIconName: 'calendar', adminOnly: true },
+  { name: 'Admin Espacios', href: '/admin-espacios', iconName: 'grid-outline', activeIconName: 'grid', adminOnly: true },
+  { name: 'Admin Trabajadores', href: '/admin-trabajadores', iconName: 'id-card-outline', activeIconName: 'id-card', adminOnly: true },
   { name: 'Mi Perfil', href: '/perfil', iconName: 'person-outline', activeIconName: 'person' },
 ];
 
@@ -46,6 +58,24 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
     if (item.clientOnly && isAdmin) return false;
     return true;
   });
+
+  // En móvil el perfil ya tiene su botón en el encabezado; se omite de la barra inferior
+  // para que quepan los demás íconos (el admin llega a 7).
+  const mobileNavItems = filteredNavItems.filter((item) => item.href !== '/perfil');
+  const insets = useSafeAreaInsets();
+
+  // Con más de 6 ítems la barra inferior se desplaza en horizontal (cada ítem mide 46px).
+  const NAV_ITEM_WIDTH = 46;
+  const scrollNav = mobileNavItems.length > 6;
+  const navScrollRef = useRef<ScrollView>(null);
+  const activeNavIndex = mobileNavItems.findIndex((i) =>
+    i.href === '/' ? pathname === '/' || pathname === '' : pathname.startsWith(i.href)
+  );
+  useEffect(() => {
+    if (scrollNav && activeNavIndex >= 0) {
+      navScrollRef.current?.scrollTo({ x: Math.max(0, activeNavIndex * NAV_ITEM_WIDTH - 90), animated: false });
+    }
+  }, [scrollNav, activeNavIndex]);
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/' || pathname === '';
@@ -66,19 +96,22 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
             style={[
               styles.floatingSidebar,
               {
-                backgroundColor: theme.backgroundElement,
-                borderColor: theme.border,
+                backgroundColor: theme.nav,
+                borderColor: theme.nav,
               },
             ]}>
             {/* Logo Mark */}
             <Pressable
               onPress={() => router.push('/')}
-              style={[styles.sidebarLogoBox, { backgroundColor: theme.primary }]}>
-              <Ionicons name="car-sport" size={22} color="#000000" />
+              style={[styles.sidebarLogoBox, { backgroundColor: theme.navActive }]}>
+              <Ionicons name="car-sport" size={22} color="#ffffff" />
             </Pressable>
 
             {/* Stack de Iconos de Navegación */}
-            <View style={styles.sidebarIconStack}>
+            <ScrollView
+              style={{ flex: 1, width: '100%' }}
+              contentContainerStyle={styles.sidebarIconStack}
+              showsVerticalScrollIndicator={false}>
               {filteredNavItems.map((item) => {
                 const active = isActive(item.href);
                 return (
@@ -88,21 +121,24 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
                     style={({ pressed }) => [
                       styles.sidebarIconBtn,
                       active && {
-                        backgroundColor: theme.primary,
+                        backgroundColor: '#ffffff',
                       },
                       pressed && { opacity: 0.8 },
                     ]}>
                     <Ionicons
                       name={active ? item.activeIconName : item.iconName}
                       size={22}
-                      color={active ? '#000000' : theme.textSecondary}
+                      color={active ? theme.nav : theme.navText}
                     />
                   </Pressable>
                 );
               })}
-            </View>
+            </ScrollView>
 
-            {/* Logout al pie del sidebar */}
+            {/* Separador entre la navegación y el botón de salir */}
+            <View style={styles.sidebarDivider} />
+
+            {/* Logout al pie del sidebar: fondo blanco e ícono rojo, igual que en móvil */}
             <Pressable
               onPress={logout}
               style={({ pressed }) => [
@@ -147,7 +183,7 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
                   { backgroundColor: theme.backgroundElement, borderColor: theme.border },
                 ]}>
                 <View style={[styles.userAvatarSm, { backgroundColor: theme.primary }]}>
-                  <Text style={{ color: '#000000', fontSize: 12, fontWeight: '800' }}>
+                  <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '800' }}>
                     {userInitials.toUpperCase()}
                   </Text>
                 </View>
@@ -183,7 +219,7 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
       <View style={styles.mobileHeader}>
         <View style={styles.mobileHeaderBrand}>
           <View style={[styles.mobileLogoBox, { backgroundColor: theme.primary }]}>
-            <Ionicons name="car-sport" size={18} color="#000000" />
+            <Ionicons name="car-sport" size={18} color="#ffffff" />
           </View>
           <View>
             <Text style={[styles.mobileBrandTitle, { color: theme.text }]}>
@@ -215,40 +251,57 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
       </View>
 
       {/* Floating Bottom Navigation Bar (Estilo BMW Luxury Dark) */}
-      <View style={styles.floatingBottomNavContainer} pointerEvents="box-none">
+      <View
+        style={[styles.floatingBottomNavContainer, { bottom: Math.max(Spacing.three, insets.bottom) }]}
+        pointerEvents="box-none">
         <View
           style={[
             styles.floatingBottomNavPill,
             {
-              backgroundColor: theme.backgroundElement,
-              borderColor: theme.border,
+              backgroundColor: theme.nav,
+              borderColor: theme.nav,
             },
           ]}>
-          {filteredNavItems.map((item) => {
-            const active = isActive(item.href);
-            return (
-              <Pressable
-                key={item.href}
-                onPress={() => router.push(item.href as any)}
-                style={({ pressed }) => [
-                  styles.floatingNavItem,
-                  active && styles.floatingNavItemActive,
-                  pressed && { opacity: 0.7 },
-                ]}>
-                <View
-                  style={[
-                    styles.navIconWrapper,
-                    active && { backgroundColor: theme.primary },
+          {(() => {
+            const botones = mobileNavItems.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <Pressable
+                  key={item.href}
+                  onPress={() => router.push(item.href as any)}
+                  style={({ pressed }) => [
+                    styles.floatingNavItem,
+                    scrollNav && { flex: 0, width: NAV_ITEM_WIDTH },
+                    active && styles.floatingNavItemActive,
+                    pressed && { opacity: 0.7 },
                   ]}>
-                  <Ionicons
-                    name={active ? item.activeIconName : item.iconName}
-                    size={20}
-                    color={active ? '#000000' : theme.textSecondary}
-                  />
-                </View>
-              </Pressable>
+                  <View
+                    style={[
+                      styles.navIconWrapper,
+                      scrollNav && { width: 38 },
+                      active && { backgroundColor: '#ffffff' },
+                    ]}>
+                    <Ionicons
+                      name={active ? item.activeIconName : item.iconName}
+                      size={20}
+                      color={active ? theme.nav : theme.navText}
+                    />
+                  </View>
+                </Pressable>
+              );
+            });
+            return scrollNav ? (
+              <ScrollView
+                ref={navScrollRef}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.navScrollContent}>
+                {botones}
+              </ScrollView>
+            ) : (
+              botones
             );
-          })}
+          })()}
         </View>
       </View>
     </SafeAreaView>
@@ -289,8 +342,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.four,
   },
   sidebarIconStack: {
-    flex: 1,
-    gap: Spacing.two + 4,
+    flexGrow: 1, // dentro de un ScrollView: centra los íconos y permite scroll si no caben
+    paddingVertical: Spacing.two,
+    gap: Spacing.two + 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -301,10 +355,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  sidebarDivider: {
+    width: 36,
+    height: 1,
+    backgroundColor: 'rgba(167, 243, 208, 0.35)',
+    marginBottom: Spacing.three,
+  },
   sidebarLogoutBtn: {
     width: 48,
     height: 48,
     borderRadius: BorderRadius.lg,
+    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -431,7 +492,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full, // Floating Pill shape
     borderWidth: 1,
     width: '100%',
-    maxWidth: 380,
+    maxWidth: 520,
     ...Platform.select({
       web: {
         boxShadow: '0 10px 30px rgba(15, 23, 42, 0.12)',
@@ -447,15 +508,20 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  // Cada ítem toma una fracción igual del ancho y el círculo del ícono se achica
+  // (hasta 42px) cuando hay muchos ítems en una pantalla angosta.
   floatingNavItem: {
-    padding: Spacing.one,
+    flex: 1,
+    padding: Spacing.half,
     alignItems: 'center',
     justifyContent: 'center',
   },
   floatingNavItemActive: {},
+  navScrollContent: { alignItems: 'center' },
   navIconWrapper: {
-    width: 42,
-    height: 42,
+    width: '100%',
+    maxWidth: 42,
+    aspectRatio: 1,
     borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',

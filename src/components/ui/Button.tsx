@@ -40,16 +40,16 @@ export const Button: React.FC<ButtonProps> = ({
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
 
   const getBackgroundColor = (pressed: boolean) => {
-    if (disabled || loading) return '#232732';
+    if (disabled || loading) return '#1f2925';
     switch (variant) {
       case 'accent':
-        return pressed ? theme.accentDark : theme.accent;
+        return pressed ? theme.primaryHover : theme.primary;
       case 'secondary':
-        return pressed ? '#222734' : '#1c202a';
+        return pressed ? '#2b3c35' : theme.secondary;
       case 'danger':
-        return pressed ? '#dc2626' : theme.danger;
+        return pressed ? '#b44a4a' : theme.danger;
       case 'outline':
-        return pressed ? 'rgba(255,255,255,0.05)' : 'transparent';
+        return pressed ? 'rgba(63,174,136,0.12)' : 'transparent';
       case 'primary':
       default:
         return pressed ? theme.primaryHover : theme.primary;
@@ -57,14 +57,15 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const getTextColor = () => {
-    if (disabled || loading) return '#64748b';
+    if (disabled || loading) return '#5f7068';
     switch (variant) {
       case 'primary':
       case 'accent':
-        return '#000000'; // Pure black text on vibrant emerald pill (matching BMW screenshot)
+        return '#ffffff'; // Texto blanco sobre el verde profundo
       case 'secondary':
+        return theme.accentDark; // verde claro sobre el gris verdoso del botón secundario
       case 'outline':
-        return theme.text;
+        return theme.accent;
       case 'danger':
       default:
         return '#ffffff';
@@ -82,7 +83,8 @@ export const Button: React.FC<ButtonProps> = ({
         styles.button,
         {
           backgroundColor: getBackgroundColor(pressed),
-          borderColor: variant === 'secondary' || variant === 'outline' ? theme.border : 'transparent',
+          borderColor:
+            variant === 'outline' ? theme.accent : variant === 'secondary' ? '#33463e' : 'transparent',
           borderWidth: variant === 'secondary' || variant === 'outline' ? 1 : 0,
         },
         isSmall && styles.buttonSm,
@@ -113,6 +115,9 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
+    // Ancho según el contenido y alineado a la izquierda, en lugar de estirarse al 100%.
+    // Para forzar otro comportamiento se puede pasar style (p. ej. flex: 1 o alignSelf).
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -122,6 +127,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   buttonSm: {
+    minHeight: 38,
     paddingVertical: 8,
     paddingHorizontal: Spacing.three,
   },

@@ -1,64 +1,54 @@
 import { Platform } from 'react-native';
 
+
+// Paleta oscura única (tono grafito verdoso, sobria). Las claves `light` y `dark` apuntan a la
+// misma paleta para que la app se vea igual sin importar el modo del sistema (los componentes
+// hacen Colors[scheme === 'dark' ? 'dark' : 'light']).
+//
+// Criterios: sin negro puro ni verde neón; texto en blanco cálido (no #fff); dos verdes con
+// función distinta: `primary` (relleno de botones, texto blanco encima, contraste AA) y
+// `accent` (texto e íconos sobre fondo oscuro, más claro para que se lea bien).
+const palette = {
+  // Texto
+  text: '#eaf1ed',
+  textSecondary: '#a7b5ae',
+  textTertiary: '#7b8c84',
+  // Fondos: página < tarjetas < superficies (campos, chips)
+  background: '#0e1412',
+  backgroundElement: '#151c19',
+  backgroundSelected: '#1c8563',
+  border: '#26322d',
+  borderLight: '#1e2823',
+  // Navegación (barra lateral y barra inferior): verde bosque
+  nav: '#10261f',
+  navText: '#9bd8c1',
+  navActive: '#3fae88',
+  // Verdes
+  primary: '#1c8563',
+  primaryHover: '#176f52',
+  primaryLight: '#173a2f',
+  primaryText: '#ffffff',
+  accent: '#3fae88',
+  accentBg: 'rgba(63, 174, 136, 0.14)',
+  accentDark: '#8fd6bb', // texto/ícono verde claro sobre botones secundarios
+  // Tonos de apoyo
+  sky: '#5fa8d3',
+  skyBg: 'rgba(95, 168, 211, 0.14)',
+  secondary: '#22302a',
+  secondaryText: '#a7b5ae',
+  success: '#3fae88',
+  successBg: 'rgba(63, 174, 136, 0.14)',
+  warning: '#d9a441',
+  warningBg: 'rgba(217, 164, 65, 0.14)',
+  danger: '#cf5b5b',
+  dangerBg: 'rgba(207, 91, 91, 0.14)',
+  card: '#151c19',
+  surface: '#1c2520',
+} as const;
+
 export const Colors = {
-  light: {
-    text: '#ffffff',
-    textSecondary: '#94a3b8',
-    textTertiary: '#64748b',
-    background: '#0d0f12', // Deep matte luxury automotive black
-    backgroundElement: '#161920', // Elevated luxury charcoal card
-    backgroundSelected: '#10b981',
-    border: '#232732',
-    borderLight: '#1a1d26',
-    primary: '#10b981', // Vivid emerald green accent (as requested replacing yellow)
-    primaryHover: '#059669',
-    primaryLight: '#064e3b',
-    primaryText: '#000000', // Black text on emerald buttons
-    accent: '#10b981',
-    accentBg: 'rgba(16, 185, 129, 0.15)',
-    accentDark: '#047857',
-    sky: '#38bdf8',
-    skyBg: '#0c2438',
-    secondary: '#222734',
-    secondaryText: '#94a3b8',
-    success: '#10b981',
-    successBg: 'rgba(16, 185, 129, 0.15)',
-    warning: '#f59e0b',
-    warningBg: 'rgba(245, 158, 11, 0.15)',
-    danger: '#ef4444',
-    dangerBg: 'rgba(239, 68, 68, 0.15)',
-    card: '#161920',
-    surface: '#1c202a',
-  },
-  dark: {
-    text: '#ffffff',
-    textSecondary: '#94a3b8',
-    textTertiary: '#64748b',
-    background: '#0d0f12',
-    backgroundElement: '#161920',
-    backgroundSelected: '#10b981',
-    border: '#232732',
-    borderLight: '#1a1d26',
-    primary: '#10b981',
-    primaryHover: '#059669',
-    primaryLight: '#064e3b',
-    primaryText: '#000000',
-    accent: '#10b981',
-    accentBg: 'rgba(16, 185, 129, 0.15)',
-    accentDark: '#047857',
-    sky: '#38bdf8',
-    skyBg: '#0c2438',
-    secondary: '#222734',
-    secondaryText: '#94a3b8',
-    success: '#10b981',
-    successBg: 'rgba(16, 185, 129, 0.15)',
-    warning: '#f59e0b',
-    warningBg: 'rgba(245, 158, 11, 0.15)',
-    danger: '#ef4444',
-    dangerBg: 'rgba(239, 68, 68, 0.15)',
-    card: '#161920',
-    surface: '#1c202a',
-  },
+  light: palette,
+  dark: palette,
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light;
