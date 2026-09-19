@@ -15,11 +15,13 @@ import {
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import { useWindowDimensions } from 'react-native';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { IconText } from '@/components/ui/IconText';
 import { Colors, BorderRadius, Spacing, MaxContentWidth } from '@/constants/theme';
 import { reclamosService } from '@/services/reclamos.service';
 import { resolveMediaUrl } from '@/services/api';
@@ -36,6 +38,8 @@ interface SelectedImage {
 
 export default function ReclamosScreen() {
   const scheme = useColorScheme();
+  const { width } = useWindowDimensions();
+  const compact = width < 480;
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const { isAuthenticated, token, isAdmin } = useAuth();
   const router = useRouter();
@@ -183,7 +187,7 @@ export default function ReclamosScreen() {
         <View style={styles.contentWrapper}>
           {/* Header */}
           <View style={styles.pageHeader}>
-            <View>
+            <View style={styles.headerText}>
               <Text style={[styles.pageTitle, { color: theme.text }]}>
                 Reclamos e Inconvenientes
               </Text>
@@ -205,13 +209,13 @@ export default function ReclamosScreen() {
                 <Ionicons
                   name="list"
                   size={15}
-                  color={activeTab === 'lista' ? '#000000' : theme.textSecondary}
+                  color={activeTab === 'lista' ? '#ffffff' : theme.textSecondary}
                 />
                 <Text
                   style={[
                     styles.tabPillText,
                     {
-                      color: activeTab === 'lista' ? '#000000' : theme.textSecondary,
+                      color: activeTab === 'lista' ? '#ffffff' : theme.textSecondary,
                       fontWeight: activeTab === 'lista' ? '800' : '600',
                     },
                   ]}>
@@ -230,13 +234,13 @@ export default function ReclamosScreen() {
                 <Ionicons
                   name="add-circle"
                   size={15}
-                  color={activeTab === 'nuevo' ? '#000000' : theme.textSecondary}
+                  color={activeTab === 'nuevo' ? '#ffffff' : theme.textSecondary}
                 />
                 <Text
                   style={[
                     styles.tabPillText,
                     {
-                      color: activeTab === 'nuevo' ? '#000000' : theme.textSecondary,
+                      color: activeTab === 'nuevo' ? '#ffffff' : theme.textSecondary,
                       fontWeight: activeTab === 'nuevo' ? '800' : '600',
                     },
                   ]}>
@@ -304,9 +308,9 @@ export default function ReclamosScreen() {
                     {/* Galería de Evidencias Fotográficas */}
                     {rec.evidencias && rec.evidencias.length > 0 && (
                       <View style={styles.evidenceGallery}>
-                        <Text style={[styles.evidenceLabel, { color: theme.textSecondary }]}>
-                          📷 Fotos de evidencia adjuntadas ({rec.evidencias.length}):
-                        </Text>
+                        <IconText icon="camera-outline" style={[styles.evidenceLabel, { color: theme.textSecondary }]}>
+                          Fotos de evidencia adjuntadas ({rec.evidencias.length}):
+                        </IconText>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }}>
                           {rec.evidencias.map((ev) => {
                             const fullUrl = resolveMediaUrl(ev.ruta_archivo);
@@ -335,7 +339,7 @@ export default function ReclamosScreen() {
                           },
                         ]}>
                         <View style={styles.responseHeader}>
-                          <Ionicons name="shield-checkmark" size={18} color="#065f46" />
+                          <Ionicons name="shield-checkmark" size={18} color="#8fd6bb" />
                           <Text style={styles.responseTitle}>
                             Respuesta Oficial del Administrador
                           </Text>
@@ -365,7 +369,7 @@ export default function ReclamosScreen() {
 
           {/* TAB 2: RADICAR RECLAMO (Formulario Luxury) */}
           {activeTab === 'nuevo' && (
-            <Card style={styles.formCard}>
+            <Card style={[styles.formCard, compact && styles.cardCompact]}>
               <Text style={[styles.formHeading, { color: theme.text }]}>
                 Nuevo Reclamo o Queja
               </Text>
@@ -459,11 +463,18 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.four,
     paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    paddingBottom: 90,
+    paddingBottom: 120,
   },
   contentWrapper: {
     width: '100%',
     maxWidth: MaxContentWidth,
+  },
+  // El bloque de título puede encogerse y saltar de línea en pantallas angostas.
+  headerText: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 280,
+    minWidth: 0,
   },
   pageHeader: {
     marginBottom: Spacing.four,
@@ -485,9 +496,14 @@ const styles = StyleSheet.create({
   },
   tabPillsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    flexShrink: 1,
+    maxWidth: '100%',
     gap: Spacing.two,
   },
   tabPill: {
+    minHeight: 38,
+    justifyContent: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -536,7 +552,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     overflow: 'hidden',
     marginRight: Spacing.two,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#26322d',
   },
   evidencePhoto: {
     width: '100%',
@@ -557,16 +573,16 @@ const styles = StyleSheet.create({
   responseTitle: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#065f46',
+    color: '#8fd6bb',
     flex: 1,
   },
   responseDate: {
     fontSize: 11,
-    color: '#047857',
+    color: '#6fd0ae',
   },
   responseText: {
     fontSize: 13,
-    color: '#064e3b',
+    color: '#cfe8dd',
     lineHeight: 19,
   },
   pendingNotice: {
@@ -597,6 +613,9 @@ const styles = StyleSheet.create({
   },
   formCard: {
     padding: Spacing.five,
+  },
+  cardCompact: {
+    padding: Spacing.four,
   },
   formHeading: {
     fontSize: 18,
@@ -650,13 +669,13 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: BorderRadius.md,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#26322d',
   },
   removeThumbBtn: {
     position: 'absolute',
     top: -6,
     right: -6,
-    backgroundColor: '#0f172a',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     width: 20,
     height: 20,
     borderRadius: 10,

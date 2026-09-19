@@ -8,6 +8,7 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
+  useWindowDimensions,
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -19,6 +20,8 @@ import { Button } from '@/components/ui/Button';
 
 export default function RegisterScreen() {
   const scheme = useColorScheme();
+  const { width } = useWindowDimensions();
+  const compact = width < 480;
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const router = useRouter();
   const { register } = useAuth();
@@ -76,6 +79,7 @@ export default function RegisterScreen() {
         <View
           style={[
             styles.card,
+            compact && styles.cardCompact,
             {
               backgroundColor: theme.backgroundElement,
               borderColor: theme.border,
@@ -177,7 +181,7 @@ export default function RegisterScreen() {
 
           <Button
             title="Crear Mi Cuenta"
-            icon={<Ionicons name="arrow-forward" size={16} color="#000000" />}
+            icon={<Ionicons name="arrow-forward" size={16} color="#ffffff" />}
             iconPosition="right"
             onPress={handleRegister}
             loading={loading}
@@ -189,7 +193,7 @@ export default function RegisterScreen() {
               ¿Ya tienes cuenta?{' '}
             </Text>
             <Pressable onPress={() => router.push('/login')}>
-              <Text style={{ color: theme.primary, fontWeight: '800', fontSize: 13 }}>
+              <Text style={{ color: theme.accent, fontWeight: '800', fontSize: 13 }}>
                 Iniciar sesión
               </Text>
             </Pressable>
@@ -208,6 +212,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: Spacing.four,
+  },
+  cardCompact: {
     padding: Spacing.four,
   },
   card: {
@@ -255,16 +262,20 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.two,
   },
   col: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: 140,
   },
   submitBtn: {
     marginTop: Spacing.two,
   },
   loginRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 2,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: Spacing.four,

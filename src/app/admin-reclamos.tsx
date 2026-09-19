@@ -14,10 +14,12 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useWindowDimensions } from 'react-native';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
+import { IconText } from '@/components/ui/IconText';
 import { Button } from '@/components/ui/Button';
 import { Colors, BorderRadius, Spacing, MaxContentWidth } from '@/constants/theme';
 import { reclamosService } from '@/services/reclamos.service';
@@ -27,6 +29,8 @@ import { Reclamo, EstadoReclamo } from '@/types';
 
 export default function AdminReclamosScreen() {
   const scheme = useColorScheme();
+  const { width } = useWindowDimensions();
+  const compact = width < 480;
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const { isAuthenticated, token, isAdmin } = useAuth();
   const router = useRouter();
@@ -148,8 +152,8 @@ export default function AdminReclamosScreen() {
 
           {/* Buscador estilo Pill */}
           <Input
-            placeholder="🔍 Buscar por cliente, correo o asunto..."
-            pill={true}
+            placeholder="Buscar por cliente, correo o asunto..."
+            search
             value={busqueda}
             onChangeText={setBusqueda}
             style={{ marginBottom: Spacing.two }}
@@ -171,7 +175,7 @@ export default function AdminReclamosScreen() {
                   style={[
                     styles.filterChipText,
                     {
-                      color: filtroEstado === st ? '#000000' : theme.textSecondary,
+                      color: filtroEstado === st ? '#ffffff' : theme.textSecondary,
                       fontWeight: filtroEstado === st ? '800' : '600',
                     },
                   ]}>
@@ -183,7 +187,7 @@ export default function AdminReclamosScreen() {
 
           {/* Formulario de Respuesta / Resolución */}
           {reclamoSeleccionado && (
-            <Card style={styles.replyBox}>
+            <Card style={[styles.replyBox, compact && styles.replyBoxCompact]}>
               <View style={styles.replyBoxHeader}>
                 <Text style={[styles.replyBoxTitle, { color: theme.text }]}>
                   Responder: {reclamoSeleccionado.asunto}
@@ -216,7 +220,7 @@ export default function AdminReclamosScreen() {
                       style={[
                         styles.statusOptionText,
                         {
-                          color: nuevoEstado === st ? '#000000' : theme.textSecondary,
+                          color: nuevoEstado === st ? '#ffffff' : theme.textSecondary,
                           fontWeight: nuevoEstado === st ? '800' : '600',
                         },
                       ]}>
@@ -241,14 +245,12 @@ export default function AdminReclamosScreen() {
                   title="Cancelar"
                   variant="secondary"
                   onPress={() => setReclamoSeleccionado(null)}
-                  style={{ flex: 1 }}
                 />
                 <Button
                   title="Guardar y Notificar"
                   icon={<Ionicons name="checkmark-circle" size={16} color="#ffffff" />}
                   onPress={handleEnviarRespuesta}
                   loading={enviandoRespuesta}
-                  style={{ flex: 2 }}
                 />
               </View>
             </Card>
@@ -280,13 +282,13 @@ export default function AdminReclamosScreen() {
                     <Text style={[styles.claimTitle, { color: theme.text }]}>
                       {rec.asunto}
                     </Text>
-                    <Text style={[styles.clientInfo, { color: theme.textSecondary }]}>
-                      👤 <Text style={{ fontWeight: '700', color: theme.text }}>{rec.nombre_cliente}</Text> • {rec.correo_cliente}
-                    </Text>
-                    <Text style={[styles.claimDate, { color: theme.textSecondary }]}>
-                      📅 {new Date(rec.fecha_registro).toLocaleDateString()} a las{' '}
+                    <IconText icon="person-outline" style={[styles.clientInfo, { color: theme.textSecondary }]}>
+                      <Text style={{ fontWeight: '700', color: theme.text }}>{rec.nombre_cliente}</Text> • {rec.correo_cliente}
+                    </IconText>
+                    <IconText icon="calendar-outline" style={[styles.claimDate, { color: theme.textSecondary }]}>
+                      {new Date(rec.fecha_registro).toLocaleDateString()} a las{' '}
                       {new Date(rec.fecha_registro).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </Text>
+                    </IconText>
                   </View>
                   <Badge label={rec.estado} status={rec.estado} />
                 </View>
@@ -299,9 +301,9 @@ export default function AdminReclamosScreen() {
                 {/* Evidencias fotográficas con URL resuelta */}
                 {rec.evidencias && rec.evidencias.length > 0 && (
                   <View style={styles.evidenceSection}>
-                    <Text style={[styles.evidenceLabel, { color: theme.textSecondary }]}>
-                      📷 Evidencias fotográficas ({rec.evidencias.length}):
-                    </Text>
+                    <IconText icon="camera-outline" style={[styles.evidenceLabel, { color: theme.textSecondary }]}>
+                      Evidencias fotográficas ({rec.evidencias.length}):
+                    </IconText>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }}>
                       {rec.evidencias.map((ev) => {
                         const fullUrl = resolveMediaUrl(ev.ruta_archivo);
@@ -322,10 +324,10 @@ export default function AdminReclamosScreen() {
                 {/* Respuesta actual si existe */}
                 {rec.respuesta_admin && (
                   <View style={[styles.currentResponseBox, { backgroundColor: theme.accentBg }]}>
-                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#065f46', marginBottom: 2 }}>
+                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#8fd6bb', marginBottom: 2 }}>
                       Respuesta actual emitida por Administración:
                     </Text>
-                    <Text style={{ fontSize: 13, color: '#064e3b', lineHeight: 18 }}>
+                    <Text style={{ fontSize: 13, color: '#cfe8dd', lineHeight: 18 }}>
                       {rec.respuesta_admin}
                     </Text>
                   </View>
@@ -353,7 +355,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.four,
     paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    paddingBottom: 90,
+    paddingBottom: 120,
   },
   contentWrapper: {
     width: '100%',
@@ -378,6 +380,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.four,
   },
   filterChip: {
+    minHeight: 38,
+    justifyContent: 'center',
     paddingHorizontal: Spacing.four,
     paddingVertical: 8,
     borderRadius: BorderRadius.full,
@@ -388,10 +392,13 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   replyBox: {
-    borderColor: '#0f172a',
+    borderColor: '#3fae88',
     borderWidth: 2,
     marginBottom: Spacing.four,
     padding: Spacing.five,
+  },
+  replyBoxCompact: {
+    padding: Spacing.three,
   },
   replyBoxHeader: {
     flexDirection: 'row',
@@ -411,11 +418,14 @@ const styles = StyleSheet.create({
   },
   statusOptionsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.two,
     marginBottom: Spacing.three,
   },
   statusOptionBtn: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: 100,
+    paddingHorizontal: Spacing.three,
     paddingVertical: 10,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
@@ -461,7 +471,7 @@ const styles = StyleSheet.create({
     marginRight: Spacing.two,
     borderRadius: BorderRadius.md,
     overflow: 'hidden',
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#26322d',
   },
   evidenceThumb: {
     width: 90,

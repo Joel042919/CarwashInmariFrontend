@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { IconText } from '@/components/ui/IconText';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -74,7 +75,7 @@ export default function HistorialScreen() {
         <View style={styles.contentWrapper}>
           {/* Header */}
           <View style={styles.pageHeader}>
-            <View>
+            <View style={styles.headerText}>
               <Text style={[styles.pageTitle, { color: theme.text }]}>
                 Historial de Servicios
               </Text>
@@ -120,7 +121,7 @@ export default function HistorialScreen() {
                       style={[
                         styles.categoryPillText,
                         {
-                          color: active ? '#000000' : theme.textSecondary,
+                          color: active ? '#ffffff' : theme.textSecondary,
                           fontWeight: active ? '800' : '600',
                         },
                       ]}>
@@ -156,11 +157,11 @@ export default function HistorialScreen() {
                     data.reservas.map((item: ReservaHistorial) => (
                       <Card key={item.id_reserva} style={styles.itemCard}>
                         <View style={styles.cardHeader}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three, flex: 1, minWidth: 0 }}>
                             <View style={[styles.iconCircle, { backgroundColor: theme.surface }]}>
                               <Ionicons name="car-sport" size={22} color={theme.text} />
                             </View>
-                            <View>
+                            <View style={{ flexShrink: 1 }}>
                               <Text style={[styles.itemTitle, { color: theme.text }]}>
                                 {item.modelo} ({item.placa_vehiculo})
                               </Text>
@@ -175,9 +176,15 @@ export default function HistorialScreen() {
                         <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
                         <View style={styles.cardFooter}>
-                          <Text style={[styles.footerDetail, { color: theme.textSecondary }]}>
-                            📅 {item.fecha_reserva.split('T')[0]} • ⏰ {item.hora_inicio.slice(0, 5)} - {item.hora_fin.slice(0, 5)}
-                          </Text>
+                          <View style={styles.footerInline}>
+                            <IconText icon="calendar-outline" style={[styles.footerDetail, { color: theme.textSecondary }]}>
+                              {item.fecha_reserva.split('T')[0]}
+                            </IconText>
+                            <Text style={[styles.footerDetail, { color: theme.textSecondary }]}>•</Text>
+                            <IconText icon="time-outline" style={[styles.footerDetail, { color: theme.textSecondary }]}>
+                              {item.hora_inicio.slice(0, 5)} - {item.hora_fin.slice(0, 5)}
+                            </IconText>
+                          </View>
                           <Text style={[styles.footerPrice, { color: theme.text }]}>
                             S/ {item.total_estimado?.toFixed(2)}
                           </Text>
@@ -202,11 +209,11 @@ export default function HistorialScreen() {
                     data.atenciones.map((item: AtencionHistorial) => (
                       <Card key={item.id_atencion} style={styles.itemCard}>
                         <View style={styles.cardHeader}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three, flex: 1, minWidth: 0 }}>
                             <View style={[styles.iconCircle, { backgroundColor: theme.surface }]}>
                               <Ionicons name="sparkles" size={22} color={theme.accent} />
                             </View>
-                            <View>
+                            <View style={{ flexShrink: 1 }}>
                               <Text style={[styles.itemTitle, { color: theme.text }]}>
                                 Atención en Bahía ({item.placa_vehiculo})
                               </Text>
@@ -221,18 +228,18 @@ export default function HistorialScreen() {
                         <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
                         <View style={styles.cardFooter}>
-                          <Text style={[styles.footerDetail, { color: theme.textSecondary }]}>
-                            ⏱️ Inicio:{' '}
+                          <IconText icon="timer-outline" style={[styles.footerDetail, { color: theme.textSecondary }]}>
+                            Inicio:{' '}
                             {item.fecha_inicio_real
                               ? new Date(item.fecha_inicio_real).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                               : 'Por iniciar'}
-                          </Text>
-                          <Text style={[styles.footerDetail, { color: theme.textSecondary }]}>
-                            🏁 Entrega:{' '}
+                          </IconText>
+                          <IconText icon="flag-outline" style={[styles.footerDetail, { color: theme.textSecondary }]}>
+                            Entrega:{' '}
                             {item.fecha_fin_real
                               ? new Date(item.fecha_fin_real).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                               : 'En proceso de secado'}
-                          </Text>
+                          </IconText>
                         </View>
                       </Card>
                     ))
@@ -254,11 +261,11 @@ export default function HistorialScreen() {
                     data.pagos.map((item: PagoHistorial) => (
                       <Card key={item.id_pago} style={styles.itemCard}>
                         <View style={styles.cardHeader}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three, flex: 1, minWidth: 0 }}>
                             <View style={[styles.iconCircle, { backgroundColor: theme.surface }]}>
-                              <Ionicons name="card" size={22} color="#0f172a" />
+                              <Ionicons name="card" size={22} color={theme.accent} />
                             </View>
-                            <View>
+                            <View style={{ flexShrink: 1 }}>
                               <Text style={[styles.itemTitle, { color: theme.text }]}>
                                 Comprobante {item.comprobante_interno}
                               </Text>
@@ -276,10 +283,10 @@ export default function HistorialScreen() {
                         <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
                         <View style={styles.cardFooter}>
-                          <Text style={[styles.footerDetail, { color: theme.textSecondary }]}>
-                            📅 {item.fecha_pago ? new Date(item.fecha_pago).toLocaleDateString() : '-'}
-                          </Text>
-                          <Text style={[styles.footerPrice, { color: '#047857' }]}>
+                          <IconText icon="calendar-outline" style={[styles.footerDetail, { color: theme.textSecondary }]}>
+                            {item.fecha_pago ? new Date(item.fecha_pago).toLocaleDateString() : '-'}
+                          </IconText>
+                          <Text style={[styles.footerPrice, { color: theme.accent }]}>
                             S/ {item.monto?.toFixed(2)}
                           </Text>
                         </View>
@@ -303,9 +310,9 @@ export default function HistorialScreen() {
                     data.pedidos.map((item: PedidoHistorial) => (
                       <Card key={item.id_pedido} style={styles.itemCard}>
                         <View style={styles.cardHeader}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three, flex: 1, minWidth: 0 }}>
                             <View style={[styles.iconCircle, { backgroundColor: theme.surface }]}>
-                              <Ionicons name="bag-check" size={22} color="#0f172a" />
+                              <Ionicons name="bag-check" size={22} color={theme.accent} />
                             </View>
                             <View style={{ flex: 1 }}>
                               <Text style={[styles.itemTitle, { color: theme.text }]}>
@@ -326,9 +333,9 @@ export default function HistorialScreen() {
                         <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
                         <View style={styles.cardFooter}>
-                          <Text style={[styles.footerDetail, { color: theme.textSecondary }]}>
-                            📅 {item.fecha_registro ? new Date(item.fecha_registro).toLocaleDateString() : '-'}
-                          </Text>
+                          <IconText icon="calendar-outline" style={[styles.footerDetail, { color: theme.textSecondary }]}>
+                            {item.fecha_registro ? new Date(item.fecha_registro).toLocaleDateString() : '-'}
+                          </IconText>
                           <Text style={[styles.footerPrice, { color: theme.text }]}>
                             Total: S/ {item.total?.toFixed(2)}
                           </Text>
@@ -371,11 +378,18 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.four,
     paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    paddingBottom: 90,
+    paddingBottom: 120,
   },
   contentWrapper: {
     width: '100%',
     maxWidth: MaxContentWidth,
+  },
+  // El bloque de título puede encogerse y saltar de línea en pantallas angostas.
+  headerText: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 280,
+    minWidth: 0,
   },
   pageHeader: {
     marginBottom: Spacing.four,
@@ -398,9 +412,13 @@ const styles = StyleSheet.create({
   categoryPillsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    flexShrink: 1,
+    maxWidth: '100%',
     gap: Spacing.two,
   },
   categoryPill: {
+    minHeight: 38,
+    justifyContent: 'center',
     paddingVertical: 9,
     paddingHorizontal: Spacing.four,
     borderRadius: BorderRadius.full,
@@ -417,6 +435,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: Spacing.two,
   },
   iconCircle: {
     width: 44,
@@ -445,6 +464,13 @@ const styles = StyleSheet.create({
   footerDetail: {
     fontSize: 13,
     fontWeight: '500',
+  },
+  footerInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    flexShrink: 1,
   },
   footerPrice: {
     fontSize: 17,

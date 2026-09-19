@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useWindowDimensions } from 'react-native';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -22,6 +23,8 @@ import { ClientePerfil } from '@/types';
 
 export default function PerfilScreen() {
   const scheme = useColorScheme();
+  const { width } = useWindowDimensions();
+  const compact = width < 480;
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const { user, token, isAuthenticated, updateUserLocal } = useAuth();
 
@@ -142,7 +145,7 @@ export default function PerfilScreen() {
           ) : (
             <>
               {/* Tarjeta de Resumen / Avatar */}
-              <Card style={styles.userSummaryCard}>
+              <Card style={[styles.userSummaryCard, compact && styles.cardCompact]}>
                 <View style={[styles.bigAvatar, { backgroundColor: theme.primary }]}>
                   <Text style={styles.bigAvatarText}>
                     {userInitials.toUpperCase()}
@@ -162,15 +165,15 @@ export default function PerfilScreen() {
               </Card>
 
               {/* Formulario (Estilo Driver details de checkout) */}
-              <Card style={styles.formCard}>
+              <Card style={[styles.formCard, compact && styles.cardCompact]}>
                 <Text style={[styles.formHeading, { color: theme.text }]}>
                   Datos Personales
                 </Text>
 
                 {successMsg ? (
                   <View style={[styles.banner, { backgroundColor: theme.accentBg }]}>
-                    <Ionicons name="checkmark-circle" size={18} color="#065f46" />
-                    <Text style={{ color: '#065f46', fontSize: 13, fontWeight: '700' }}>
+                    <Ionicons name="checkmark-circle" size={18} color="#8fd6bb" />
+                    <Text style={{ color: '#8fd6bb', fontSize: 13, fontWeight: '700' }}>
                       {successMsg}
                     </Text>
                   </View>
@@ -258,7 +261,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.four,
     paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    paddingBottom: 90,
+    paddingBottom: 120,
   },
   contentWrapper: {
     width: '100%',
@@ -293,7 +296,7 @@ const styles = StyleSheet.create({
   bigAvatarText: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#000000',
+    color: '#ffffff',
   },
   summaryName: {
     fontSize: 20,
@@ -313,10 +316,15 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.three,
   },
   col: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: 150,
+  },
+  cardCompact: {
+    padding: Spacing.four,
   },
   banner: {
     flexDirection: 'row',

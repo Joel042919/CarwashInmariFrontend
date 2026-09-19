@@ -89,7 +89,7 @@ export default function DashboardScreen() {
         <View style={styles.contentWrapper}>
           {/* Header Title Section (Estilo Tableau de bord) */}
           <View style={styles.topHeaderSection}>
-            <View>
+            <View style={styles.headerText}>
               <Text style={[styles.mainHeading, { color: theme.text }]}>
                 {isAdmin ? 'Panel de Administración' : 'Centro de Atención Vehicular'}
               </Text>
@@ -123,7 +123,7 @@ export default function DashboardScreen() {
                     style={[
                       styles.categoryPillText,
                       {
-                        color: selectedFilter === tab ? '#000000' : theme.textSecondary,
+                        color: selectedFilter === tab ? '#ffffff' : theme.textSecondary,
                         fontWeight: selectedFilter === tab ? '800' : '600',
                       },
                     ]}>
@@ -143,7 +143,7 @@ export default function DashboardScreen() {
                 showDot={true}
               />
               <View style={styles.ratingBadge}>
-                <Ionicons name="star" size={13} color="#f59e0b" />
+                <Ionicons name="star" size={13} color="#d9a441" />
                 <Text style={styles.ratingText}>4.98 Calidad</Text>
               </View>
             </View>
@@ -173,7 +173,7 @@ export default function DashboardScreen() {
                     </Text>
                   </View>
                   <View style={[styles.specTag, { backgroundColor: theme.surface }]}>
-                    <Ionicons name="sparkles" size={14} color="#f59e0b" />
+                    <Ionicons name="sparkles" size={14} color="#d9a441" />
                     <Text style={[styles.specTagText, { color: theme.text }]}>
                       Secado por Aire
                     </Text>
@@ -326,10 +326,10 @@ export default function DashboardScreen() {
                 <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '700' }}>
                   Comprobante y Pago
                 </Text>
-                <Ionicons name="card" size={20} color="#34d399" />
+                <Ionicons name="card" size={20} color="#6fd0ae" />
               </View>
 
-              <Text style={{ color: '#94a3b8', fontSize: 12, marginTop: 4 }}>
+              <Text style={{ color: '#9bd8c1', fontSize: 12, marginTop: 4 }}>
                 {ultimoPago ? `Comprobante: ${ultimoPago.comprobante_interno}` : 'Comprobante interno emitido'}
               </Text>
 
@@ -337,7 +337,7 @@ export default function DashboardScreen() {
                 <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '800', letterSpacing: 1.5 }}>
                   **** **** 2468
                 </Text>
-                <Text style={{ color: '#34d399', fontSize: 18, fontWeight: '800' }}>
+                <Text style={{ color: '#6fd0ae', fontSize: 18, fontWeight: '800' }}>
                   S/ {ultimoPago?.monto ? ultimoPago.monto.toFixed(2) : '45.00'}
                 </Text>
               </View>
@@ -362,11 +362,18 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.four,
     paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    paddingBottom: 90,
+    paddingBottom: 120,
   },
   contentWrapper: {
     width: '100%',
     maxWidth: MaxContentWidth,
+  },
+  // El bloque de título puede encogerse y saltar de línea en pantallas angostas.
+  headerText: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 280,
+    minWidth: 0,
   },
   topHeaderSection: {
     marginBottom: Spacing.four,
@@ -389,9 +396,14 @@ const styles = StyleSheet.create({
   },
   categoryPillsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    flexShrink: 1,
+    maxWidth: '100%',
     gap: Spacing.two,
   },
   categoryPill: {
+    minHeight: 38,
+    justifyContent: 'center',
     paddingVertical: 8,
     paddingHorizontal: Spacing.three + 2,
     borderRadius: BorderRadius.full,
@@ -409,6 +421,8 @@ const styles = StyleSheet.create({
   },
   heroTopRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: Spacing.three,
@@ -417,7 +431,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(245, 158, 11, 0.16)',
+    backgroundColor: 'rgba(217, 164, 65, 0.16)',
     paddingHorizontal: Spacing.three,
     paddingVertical: 4,
     borderRadius: BorderRadius.full,
@@ -425,7 +439,7 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#fbbf24',
+    color: '#e2b65c',
   },
   heroContentRow: {
     flexDirection: 'row',
@@ -433,9 +447,13 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: Spacing.four,
   },
+  // flexBasis decide cuándo la imagen salta de línea; flexShrink/minWidth evitan que el
+  // contenido se desborde en pantallas de menos de 300px de ancho útil.
   heroInfoCol: {
-    flex: 1,
-    minWidth: 280,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 260,
+    minWidth: 0,
   },
   heroCarTitle: {
     fontSize: 24,
@@ -470,7 +488,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   heroImageWrapper: {
-    width: 280,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 220,
+    maxWidth: 320,
+    minWidth: 0,
     height: 160,
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
@@ -587,8 +609,8 @@ const styles = StyleSheet.create({
 
   // Payment Card (Dark luxury)
   paymentCard: {
-    backgroundColor: '#161920',
-    borderColor: '#232732',
+    backgroundColor: '#12352b',
+    borderColor: '#1f5a48',
   },
   paymentCardChipRow: {
     flexDirection: 'row',

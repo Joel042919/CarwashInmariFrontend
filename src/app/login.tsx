@@ -8,6 +8,7 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
+  useWindowDimensions,
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -19,6 +20,8 @@ import { Button } from '@/components/ui/Button';
 
 export default function LoginScreen() {
   const scheme = useColorScheme();
+  const { width } = useWindowDimensions();
+  const compact = width < 480;
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const router = useRouter();
   const { login } = useAuth();
@@ -70,6 +73,7 @@ export default function LoginScreen() {
         <View
           style={[
             styles.card,
+            compact && styles.cardCompact,
             {
               backgroundColor: theme.backgroundElement,
               borderColor: theme.border,
@@ -78,7 +82,7 @@ export default function LoginScreen() {
           {/* Header */}
           <View style={styles.header}>
             <View style={[styles.logoIcon, { backgroundColor: theme.primary }]}>
-              <Ionicons name="car-sport" size={28} color="#000000" />
+              <Ionicons name="car-sport" size={28} color="#ffffff" />
             </View>
             <Text style={[styles.title, { color: theme.text }]}>
               CARWASH INMARI
@@ -126,7 +130,7 @@ export default function LoginScreen() {
 
           <Button
             title="Ingresar a la Plataforma"
-            icon={<Ionicons name="arrow-forward" size={16} color="#000000" />}
+            icon={<Ionicons name="arrow-forward" size={16} color="#ffffff" />}
             iconPosition="right"
             onPress={() => handleLogin()}
             loading={loading}
@@ -139,7 +143,7 @@ export default function LoginScreen() {
               ¿Aún no tienes cuenta?{' '}
             </Text>
             <Pressable onPress={() => router.push('/register')}>
-              <Text style={{ color: theme.primary, fontWeight: '800', fontSize: 13 }}>
+              <Text style={{ color: theme.accent, fontWeight: '800', fontSize: 13 }}>
                 Crear cuenta de cliente
               </Text>
             </Pressable>
@@ -152,14 +156,16 @@ export default function LoginScreen() {
             </Text>
             <View style={styles.demoButtonsRow}>
               <Button
-                title="👤 Cliente (Joel)"
+                title="Cliente (Joel)"
+                icon={<Ionicons name="person-outline" size={15} color={theme.accentDark} />}
                 variant="secondary"
                 size="sm"
                 onPress={() => quickLogin('joel@cliente.com', 'cliente123')}
                 style={styles.demoBtn}
               />
               <Button
-                title="🛡️ Admin Inmari"
+                title="Admin Inmari"
+                icon={<Ionicons name="shield-checkmark-outline" size={15} color={theme.accentDark} />}
                 variant="secondary"
                 size="sm"
                 onPress={() => quickLogin('admin@inmari.com', 'admin123')}
@@ -181,6 +187,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: Spacing.four,
+  },
+  cardCompact: {
     padding: Spacing.four,
   },
   card: {
@@ -235,6 +244,8 @@ const styles = StyleSheet.create({
   },
   registerRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 2,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: Spacing.four,
@@ -253,9 +264,9 @@ const styles = StyleSheet.create({
   },
   demoButtonsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: Spacing.two,
   },
-  demoBtn: {
-    flex: 1,
-  },
+  demoBtn: {},
 });
