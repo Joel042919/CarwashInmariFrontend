@@ -13,6 +13,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
+import { canAccessRoute } from '@/constants/access';
 import { Colors, BREAKPOINT_DESKTOP, Spacing, BorderRadius, MaxContentWidth } from '@/constants/theme';
 import { Badge } from '@/components/ui/Badge';
 
@@ -27,6 +28,9 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { name: 'Inicio', href: '/', iconName: 'home-outline', activeIconName: 'home' },
+  { name: 'Mis asignaciones', href: '/mis-asignaciones', iconName: 'clipboard-outline', activeIconName: 'clipboard' },
+  { name: 'Atenciones', href: '/atenciones', iconName: 'car-outline', activeIconName: 'car' },
+  { name: 'Mis pagos', href: '/mis-pagos', iconName: 'card-outline', activeIconName: 'card' },
   { name: 'Historial', href: '/historial', iconName: 'car-sport-outline', activeIconName: 'car-sport' },
   { name: 'Reclamos', href: '/reclamos', iconName: 'chatbubble-ellipses-outline', activeIconName: 'chatbubble-ellipses', clientOnly: true },
   { name: 'Admin Reclamos', href: '/admin-reclamos', iconName: 'shield-checkmark-outline', activeIconName: 'shield-checkmark', adminOnly: true },
@@ -36,6 +40,8 @@ const NAV_ITEMS: NavItem[] = [
   { name: 'Admin Documentos', href: '/admin-documentos', iconName: 'document-text-outline', activeIconName: 'document-text', adminOnly: true },
   { name: 'Admin Productos', href: '/admin-productos', iconName: 'cube-outline', activeIconName: 'cube', adminOnly: true },
   { name: 'Admin Pedidos', href: '/admin-pedidos', iconName: 'receipt-outline', activeIconName: 'receipt', adminOnly: true },
+  { name: 'Admin Pagos', href: '/admin-pagos', iconName: 'cash-outline', activeIconName: 'cash', adminOnly: true },
+  { name: 'Admin Reportes', href: '/admin-reportes', iconName: 'bar-chart-outline', activeIconName: 'bar-chart', adminOnly: true },
   { name: 'Reservas', href: '/reservas', iconName: 'calendar-outline', activeIconName: 'calendar', clientOnly: true },
   { name: 'Vehículos', href: '/vehiculos', iconName: 'speedometer-outline', activeIconName: 'speedometer', clientOnly: true },
   { name: 'Admin Reservas', href: '/admin-reservas', iconName: 'calendar-outline', activeIconName: 'calendar', adminOnly: true },
@@ -51,9 +57,11 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, role, logout } = useAuth();
 
   const filteredNavItems = NAV_ITEMS.filter((item) => {
+    if (!canAccessRoute(item.href, role)) return false;
+    if (role === 'trabajador' && item.href === '/atenciones') return false;
     if (item.adminOnly && !isAdmin) return false;
     if (item.clientOnly && isAdmin) return false;
     return true;

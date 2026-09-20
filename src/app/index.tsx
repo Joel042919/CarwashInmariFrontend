@@ -9,7 +9,7 @@ import {
   RefreshControl,
   Image,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
@@ -22,6 +22,12 @@ import { clienteService } from '@/services/cliente.service';
 import { Reclamo, HistorialClienteUnificado } from '@/types';
 
 export default function DashboardScreen() {
+  const { isTrabajador } = useAuth();
+  if (isTrabajador) return <Redirect href="/mis-asignaciones" />;
+  return <DashboardContent />;
+}
+
+function DashboardContent() {
   const scheme = useColorScheme();
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const router = useRouter();

@@ -19,6 +19,12 @@ export const TOKEN_STORAGE_KEY = '@carwash_inmari_token';
 export const USER_STORAGE_KEY = '@carwash_inmari_user';
 
 let authToken: string | null = null;
+let unauthorizedHandler: (() => void) | null = null;
+
+export const onUnauthorized = (handler: () => void): (() => void) => {
+  unauthorizedHandler = handler;
+  return () => { if (unauthorizedHandler === handler) unauthorizedHandler = null; };
+};
 
 export const setAuthToken = (token: string | null) => {
   authToken = token;
@@ -78,6 +84,7 @@ const buildHeaders = (isJson = true): Record<string, string> => {
 };
 
 const handleResponse = async <T>(response: Response): Promise<T> => {
+  if (response.status === 401 && authToken) unauthorizedHandler?.();
   if (!response.ok) {
     let errorMessage = `Error HTTP ${response.status}`;
     try {

@@ -1,13 +1,11 @@
 import { api } from './api';
 import {
   CrearReservaPayload,
-  CrearTrabajadorPayload,
   DisponibilidadResponse,
   Espacio,
   HorarioAtencion,
   ReprogramarPayload,
   Reserva,
-  Trabajador,
   TrabajadorDisponible,
   Vehiculo,
   VehiculoPayload,
@@ -61,12 +59,4 @@ export const reservasService = {
     api.post<Reserva>(`/admin/reservas/${id}/programar`, { trabajadores }),
   cancelarAdmin: (id: string, motivo?: string): Promise<Reserva> =>
     api.patch<Reserva>(`/admin/reservas/${id}/cancelar`, { motivo: motivo ?? '' }),
-};
-
-export const trabajadoresService = {
-  listar: (): Promise<Trabajador[]> => api.get<Trabajador[]>('/admin/trabajadores'),
-  crear: (data: CrearTrabajadorPayload): Promise<Trabajador> =>
-    api.post<Trabajador>('/admin/trabajadores', data),
-  cambiarDisponibilidad: (id: string, disponible: boolean): Promise<{ disponible: boolean }> =>
-    api.patch<{ disponible: boolean }>(`/admin/trabajadores/${id}/disponibilidad`, { disponible }),
 };

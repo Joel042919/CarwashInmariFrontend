@@ -398,23 +398,4 @@ export interface TrabajadorDisponible {
 // ---------------------------------------------------------------------------
 // Trabajadores (alta mínima para asignar atenciones)
 // ---------------------------------------------------------------------------
-export interface Trabajador {
-  id_usuario: string;
-  nombre: string;
-  apellido: string;
-  correo: string;
-  telefono?: string;
-  dni: string;
-  fecha_contratacion: string;
-  disponible: boolean;
-}
-
-export interface CrearTrabajadorPayload {
-  nombre: string;
-  apellido: string;
-  correo: string;
-  telefono?: string;
-  contrasena: string;
-  dni: string;
-  fecha_contratacion?: string;
-}
+export type { Trabajador, CrearTrabajadorPayload, ActualizarTrabajadorPayload } from './trabajadores';

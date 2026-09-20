@@ -22,6 +22,19 @@ import { clienteService } from '@/services/cliente.service';
 import { ClientePerfil } from '@/types';
 
 export default function PerfilScreen() {
+  const { isCliente, user } = useAuth();
+  const theme = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  if (!isCliente) return <ResponsiveLayout><ScrollView contentContainerStyle={{ padding: 24 }}><Card style={{ padding: 24, gap: 12 }}>
+    <Text style={{ color: theme.text, fontSize: 22, fontWeight: '700' }}>{user?.nombre} {user?.apellido}</Text>
+    <Text style={{ color: theme.text }}>{user?.correo}</Text>
+    <Text style={{ color: theme.text }}>{user?.telefono || 'Sin teléfono registrado'}</Text>
+    <Badge label={user?.rol || ''} status="disponible" />
+    <Text style={{ color: theme.textSecondary }}>Los datos laborales se administran desde Gestión de trabajadores.</Text>
+  </Card></ScrollView></ResponsiveLayout>;
+  return <ClientePerfilScreen />;
+}
+
+function ClientePerfilScreen() {
   const scheme = useColorScheme();
   const { width } = useWindowDimensions();
   const compact = width < 480;

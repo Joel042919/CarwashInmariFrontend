@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/components/layout/Screen';
 import { Card } from '@/components/ui/Card';
@@ -26,10 +26,11 @@ export default function AdminReservasScreen() {
   const scheme = useColorScheme();
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const router = useRouter();
+  const { reserva: reservaSeleccionada } = useLocalSearchParams<{ reserva?: string }>();
   const { isAdmin, isAuthenticated } = useAuth();
 
   const [reservas, setReservas] = useState<Reserva[]>([]);
-  const [estado, setEstado] = useState('pendiente');
+  const [estado, setEstado] = useState(reservaSeleccionada ? 'todas' : 'pendiente');
   const [fecha, setFecha] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,19 +49,18 @@ export default function AdminReservasScreen() {
 
   const load = useCallback(async () => {
     try {
-      setReservas(
-        await reservasService.listarAdmin({
+      const lista = await reservasService.listarAdmin({
           estado: estado === 'todas' ? undefined : estado,
           fecha: fecha || undefined,
-        })
-      );
+        });
+      setReservas(reservaSeleccionada ? lista.filter((r) => r.id_reserva === reservaSeleccionada) : lista);
     } catch (err) {
       notify('Error', errorMessage(err, 'No se pudieron cargar las reservas'), 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [estado, fecha]);
+  }, [estado, fecha, reservaSeleccionada]);
 
   useEffect(() => {
     if (isAuthenticated && isAdmin) {

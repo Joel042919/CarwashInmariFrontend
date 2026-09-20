@@ -1,13 +1,16 @@
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import { Slot, useRouter, useSegments } from 'expo-router';
+import { Slot, useRouter, useSegments, usePathname } from 'expo-router';
+import { canAccessRoute } from '@/constants/access';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/theme';
 import { DialogHost } from '@/components/ui/DialogHost';
 
 function AuthGate() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, role } = useAuth();
+  const pathname = usePathname();
+  const allowed = canAccessRoute(pathname, role);
   const segments = useSegments();
   const router = useRouter();
 
@@ -22,12 +25,14 @@ function AuthGate() {
     } else if (isAuthenticated && inAuthGroup) {
       // Redirigir al dashboard si ya tiene sesión
       router.replace('/');
+    } else if (isAuthenticated && !allowed) {
+      router.replace(role === 'trabajador' ? '/mis-asignaciones' : '/');
     }
-  }, [isAuthenticated, isLoading, segments, router]);
+  }, [isAuthenticated, isLoading, segments, router, allowed, role]);
 
   const inAuthGroup = segments[0] === 'login' || segments[0] === 'register';
 
-  if (isLoading || (!isAuthenticated && !inAuthGroup) || (isAuthenticated && inAuthGroup)) {
+  if (isLoading || (!isAuthenticated && !inAuthGroup) || (isAuthenticated && (inAuthGroup || !allowed))) {
     return (
       <View
         style={{

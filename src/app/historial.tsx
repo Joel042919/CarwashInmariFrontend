@@ -10,10 +10,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { IconText } from '@/components/ui/IconText';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { Colors, BorderRadius, Spacing, MaxContentWidth } from '@/constants/theme';
 import { clienteService } from '@/services/cliente.service';
 import { useAuth } from '@/context/AuthContext';
@@ -31,6 +33,7 @@ export default function HistorialScreen() {
   const scheme = useColorScheme();
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const { isAuthenticated, token } = useAuth();
+  const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<TabType>('reservas');
   const [data, setData] = useState<HistorialClienteUnificado | null>(null);
@@ -289,6 +292,14 @@ export default function HistorialScreen() {
                           <Text style={[styles.footerPrice, { color: theme.accent }]}>
                             S/ {item.monto?.toFixed(2)}
                           </Text>
+                        </View>
+                        <View style={{ marginTop: Spacing.three, alignItems: 'flex-start' }}>
+                          <Button
+                            title="Ver comprobante"
+                            size="sm"
+                            variant="outline"
+                            onPress={() => router.push(`/comprobante/${item.id_pago}` as never)}
+                          />
                         </View>
                       </Card>
                     ))

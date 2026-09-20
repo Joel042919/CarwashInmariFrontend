@@ -14,7 +14,6 @@ import { badgeStatus, confirmAction, errorMessage, formatSoles, notify } from '@
 
 // Siguiente estado permitido en el flujo normal (coincide con las transiciones del backend).
 const SIGUIENTE: Partial<Record<EstadoPedido, { estado: EstadoPedido; label: string }>> = {
-  registrado: { estado: 'pagado', label: 'Marcar pagado' },
   pagado: { estado: 'preparando', label: 'Preparar' },
   preparando: { estado: 'entregado', label: 'Marcar entregado' },
 };
@@ -74,7 +73,7 @@ export default function AdminPedidosScreen() {
   return (
     <Screen
       title="Pedidos de Productos"
-      subtitle="RF-12: seguimiento de pedidos. Al cancelar un pedido el stock se devuelve automáticamente."
+      subtitle="Seguimiento operativo de pedidos. Los cobros y devoluciones se registran desde Pagos."
       refreshing={refreshing}
       onRefresh={() => {
         setRefreshing(true);
@@ -102,7 +101,8 @@ export default function AdminPedidosScreen() {
       ) : (
         pedidos.map((p) => {
           const sig = SIGUIENTE[p.estado];
-          const cancelable = p.estado !== 'entregado' && p.estado !== 'cancelado';
+          const cobrar = p.estado === 'registrado';
+          const cancelable = p.estado === 'registrado';
           return (
             <Card key={p.id_pedido} style={styles.card}>
               <View style={styles.top}>
@@ -133,8 +133,16 @@ export default function AdminPedidosScreen() {
                 </Text>
               ) : null}
 
-              {(sig || cancelable) && (
+              {(sig || cancelable || cobrar) && (
                 <View style={styles.actions}>
+                  {cobrar && (
+                    <Button
+                      title="Registrar cobro"
+                      size="sm"
+                      disabled={procesando === p.id_pedido}
+                      onPress={() => router.push('/admin-pagos')}
+                    />
+                  )}
                   {sig && (
                     <Button
                       title={sig.label}

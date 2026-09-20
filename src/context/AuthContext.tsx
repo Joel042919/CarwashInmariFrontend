@@ -5,6 +5,7 @@ import {
   setAuthToken,
   TOKEN_STORAGE_KEY,
   USER_STORAGE_KEY,
+  onUnauthorized,
 } from '@/services/api';
 import { authService, LoginParams, RegisterClienteParams } from '@/services/auth.service';
 
@@ -16,6 +17,7 @@ interface AuthContextType {
   role: RolUsuario | null;
   isAdmin: boolean;
   isCliente: boolean;
+  isTrabajador: boolean;
   login: (params: LoginParams) => Promise<void>;
   register: (params: RegisterClienteParams) => Promise<void>;
   logout: () => Promise<void>;
@@ -109,6 +111,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
   }, [user]);
 
+  useEffect(() => onUnauthorized(() => { void logout(); }), [logout]);
+
   const value = useMemo<AuthContextType>(() => {
     const userRole = user?.rol || null;
     return {
@@ -119,6 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       role: userRole,
       isAdmin: userRole === 'administrador',
       isCliente: userRole === 'cliente',
+      isTrabajador: userRole === 'trabajador',
       login,
       register,
       logout,
