@@ -139,6 +139,11 @@ export const api = {
     return handleResponse<T>(res);
   },
 
+  delete: async <T>(endpoint: string): Promise<T> => {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, { method: 'DELETE', headers: buildHeaders(true) });
+    return handleResponse<T>(res);
+  },
+
   patch: async <T>(endpoint: string, data?: unknown): Promise<T> => {
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PATCH',

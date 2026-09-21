@@ -29,6 +29,7 @@ export default function AdminReservasScreen() {
 
   const [vista, setVista] = useState<'lista' | 'agenda'>('lista');
   const [reservas, setReservas] = useState<Reserva[]>([]);
+  const [agenda, setAgenda] = useState<AgendaDia | null>(null);
   const [estado, setEstado] = useState(reservaSeleccionada ? 'todas' : 'pendiente');
   const [fecha, setFecha] = useState('');
   const [fechaAgenda, setFechaAgenda] = useState(toISODate(new Date()));
@@ -60,6 +61,17 @@ export default function AdminReservasScreen() {
       setRefreshing(false);
     }
   }, [estado, fecha, reservaSeleccionada]);
+
+  const loadAgenda = useCallback(async () => {
+    try {
+      setAgenda(await reservasService.agenda(fechaAgenda));
+    } catch (err) {
+      notify('Error', errorMessage(err, 'No se pudo cargar la agenda'), 'error');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [fechaAgenda]);
 
   useEffect(() => {
     if (!isAuthenticated || !isAdmin) return;

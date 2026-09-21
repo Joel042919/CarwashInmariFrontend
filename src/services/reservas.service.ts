@@ -15,6 +15,8 @@ import {
 export const vehiculosService = {
   misVehiculos: (): Promise<Vehiculo[]> => api.get<Vehiculo[]>('/vehiculos/mis-vehiculos'),
   registrar: (data: VehiculoPayload): Promise<Vehiculo> => api.post<Vehiculo>('/vehiculos', data),
+  actualizar: (id: string, data: VehiculoPayload): Promise<Vehiculo> => api.put<Vehiculo>(`/vehiculos/${id}`, data),
+  eliminar: (id: string): Promise<void> => api.delete<void>(`/vehiculos/${id}`),
 };
 
 export const espaciosService = {

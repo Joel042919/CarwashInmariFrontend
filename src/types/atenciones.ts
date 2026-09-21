@@ -9,6 +9,7 @@ export interface Atencion {
   hora_inicio: string;
   hora_fin: string;
   placa: string;
+  id_vehiculo: string;
   cliente: string;
   fecha_inicio_real: string | null;
   fecha_fin_real: string | null;
@@ -28,4 +29,15 @@ export interface FiltroAtenciones {
   estado?: EstadoAtencion;
   desde?: string;
   hasta?: string;
+}
+
+export interface EvidenciaAtencion {
+  id_evidencia: string;
+  id_atencion: string;
+  id_vehiculo: string;
+  registrado_por: string;
+  tipo: string;
+  descripcion?: string;
+  ruta_foto: string;
+  created_at: string;
 }

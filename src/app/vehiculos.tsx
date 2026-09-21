@@ -11,7 +11,7 @@ import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { vehiculosService } from '@/services/reservas.service';
 import { Vehiculo } from '@/types';
-import { errorMessage, notify } from '@/utils/dialog';
+import { confirmAction, errorMessage, notify } from '@/utils/dialog';
 
 const TIPOS = ['Auto', 'Camioneta', 'SUV', 'Moto', 'Furgoneta'];
 
@@ -40,6 +40,7 @@ export default function VehiculosScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAdmin) router.replace('/admin-reservas');
@@ -73,15 +74,18 @@ export default function VehiculosScreen() {
 
     setSaving(true);
     try {
-      await vehiculosService.registrar({
+      const payload = {
         placa: form.placa.trim(),
         marca: form.marca.trim(),
         modelo: form.modelo.trim(),
         color: form.color.trim() || undefined,
         anio,
         tipo_vehiculo: form.tipo || undefined,
-      });
+      };
+      if (editingId) await vehiculosService.actualizar(editingId, payload);
+      else await vehiculosService.registrar(payload);
       setForm(null);
+      setEditingId(null);
       await load();
     } catch (err) {
       notify('No se pudo registrar', errorMessage(err), 'error');
@@ -104,7 +108,7 @@ export default function VehiculosScreen() {
           <Button
             title="Nuevo vehículo"
             icon={<Ionicons name="add" size={16} color="#ffffff" />}
-            onPress={() => setForm(emptyForm)}
+            onPress={() => { setEditingId(null); setForm(emptyForm); }}
           />
         ) : undefined
       }>
@@ -150,7 +154,7 @@ export default function VehiculosScreen() {
 
           <View style={styles.actions}>
             <Button title="Guardar" loading={saving} onPress={guardar} />
-            <Button title="Cancelar" variant="outline" onPress={() => setForm(null)} />
+            <Button title="Cancelar" variant="outline" onPress={() => { setForm(null); setEditingId(null); }} />
           </View>
         </Card>
       )}
@@ -182,6 +186,10 @@ export default function VehiculosScreen() {
                     {[v.color, v.tipo_vehiculo].filter(Boolean).join(' · ')}
                   </Text>
                 </View>
+              </View>
+              <View style={{ flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.three }}>
+                <Button title="Editar" size="sm" variant="outline" onPress={() => { setEditingId(v.id_vehiculo); setForm({ placa: v.placa, marca: v.marca, modelo: v.modelo, color: v.color || '', anio: v.anio ? String(v.anio) : '', tipo: v.tipo_vehiculo || '' }); }} />
+                <Button title="Eliminar" size="sm" variant="danger" onPress={async () => { if (!await confirmAction('Eliminar vehículo', `¿Eliminar ${v.placa}? No podrá eliminarse si tiene reservas asociadas.`)) return; try { await vehiculosService.eliminar(v.id_vehiculo); await load(); } catch (err) { notify('No se pudo eliminar', errorMessage(err), 'error'); } }} />
               </View>
             </Card>
           ))}
