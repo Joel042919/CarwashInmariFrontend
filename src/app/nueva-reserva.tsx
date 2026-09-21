@@ -23,16 +23,25 @@ interface SlotElegido {
   hora_fin: string;
 }
 
-// Crea una reserva nueva o, con ?reprogramar=<id>, cambia la fecha/horario de una existente.
-// TODO(Erick): primera versión completa de RF-06 (cliente), hecha para poder probar el flujo
-// de punta a punta. Es tuya: puedes modificarla o reemplazarla por completo (por ejemplo,
-// con un calendario mensual o notificaciones al cliente). Junto con reservas.tsx.
+const parseServiciosParam = (raw?: string | string[]): string[] => {
+  if (!raw) return [];
+  const s = Array.isArray(raw) ? raw.join(',') : raw;
+  return s
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean);
+};
+
+/** RF-06: crear o reprogramar una reserva del cliente. */
 export default function NuevaReservaScreen() {
   const scheme = useColorScheme();
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const router = useRouter();
   const { isAdmin, isAuthenticated } = useAuth();
-  const { reprogramar } = useLocalSearchParams<{ reprogramar?: string }>();
+  const { reprogramar, servicios: serviciosParam } = useLocalSearchParams<{
+    reprogramar?: string;
+    servicios?: string | string[];
+  }>();
   const modoReprogramar = !!reprogramar;
 
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
@@ -41,7 +50,7 @@ export default function NuevaReservaScreen() {
   const [loading, setLoading] = useState(true);
 
   const [vehiculoId, setVehiculoId] = useState('');
-  const [seleccion, setSeleccion] = useState<string[]>([]);
+  const [seleccion, setSeleccion] = useState<string[]>(() => parseServiciosParam(serviciosParam));
   const [fecha, setFecha] = useState(toISODate(new Date()));
   const [disp, setDisp] = useState<DisponibilidadResponse | null>(null);
   const [dispLoading, setDispLoading] = useState(false);
@@ -54,7 +63,6 @@ export default function NuevaReservaScreen() {
     if (isAdmin) router.replace('/admin-reservas');
   }, [isAdmin, router]);
 
-  // Carga inicial
   useEffect(() => {
     if (!isAuthenticated || isAdmin) return;
     (async () => {
@@ -66,6 +74,11 @@ export default function NuevaReservaScreen() {
           setVehiculos(v);
           setServicios(s);
           if (v.length === 1) setVehiculoId(v[0].id_vehiculo);
+          const pre = parseServiciosParam(serviciosParam);
+          if (pre.length > 0) {
+            const validos = new Set(s.map((x) => x.id_servicio));
+            setSeleccion(pre.filter((id) => validos.has(id)));
+          }
         }
       } catch (err) {
         notify('Error', errorMessage(err, 'No se pudo cargar la información'), 'error');
@@ -73,7 +86,7 @@ export default function NuevaReservaScreen() {
         setLoading(false);
       }
     })();
-  }, [isAuthenticated, isAdmin, modoReprogramar, reprogramar]);
+  }, [isAuthenticated, isAdmin, modoReprogramar, reprogramar, serviciosParam]);
 
   const claveServicios = seleccion.join(',');
 
@@ -128,7 +141,11 @@ export default function NuevaReservaScreen() {
           fecha,
           hora_inicio: slot.hora_inicio,
         });
-        notify('Reserva reprogramada', 'Un administrador confirmará el nuevo horario.', 'success');
+        notify(
+          'Reserva reprogramada',
+          'Quedó pendiente de nueva confirmación. Un administrador asignará personal al nuevo horario.',
+          'success'
+        );
         router.replace('/reservas');
         return;
       }
@@ -175,7 +192,7 @@ export default function NuevaReservaScreen() {
       title={titulo}
       subtitle={
         modoReprogramar
-          ? 'Elige la nueva fecha y hora. La duración de tu reserva se mantiene.'
+          ? 'Elige la nueva fecha y hora. La duración se mantiene; deberás esperar nueva confirmación.'
           : 'Elige tu vehículo, los servicios, la fecha y un horario disponible.'
       }
       headerRight={
@@ -256,7 +273,10 @@ export default function NuevaReservaScreen() {
                         onPress={() => alternarServicio(s.id_servicio)}
                         style={[
                           styles.serviceRow,
-                          { borderColor: activo ? theme.primary : theme.border, backgroundColor: activo ? theme.accentBg : theme.backgroundElement },
+                          {
+                            borderColor: activo ? theme.primary : theme.border,
+                            backgroundColor: activo ? theme.accentBg : theme.backgroundElement,
+                          },
                         ]}>
                         <Ionicons
                           name={activo ? 'checkbox' : 'square-outline'}
@@ -294,7 +314,8 @@ export default function NuevaReservaScreen() {
               <ActivityIndicator color={theme.accent} />
             ) : !disp || disp.espacios.length === 0 ? (
               <Text style={{ color: theme.textSecondary }}>
-                No hay horarios disponibles para este día. Prueba con otra fecha.
+                No hay horarios disponibles para este día. Prueba con otra fecha o revisa que existan espacios con
+                horario activo.
               </Text>
             ) : (
               disp.espacios.map((e) => (
@@ -307,9 +328,14 @@ export default function NuevaReservaScreen() {
                       const activo = slot?.id_espacio === e.id_espacio && slot.hora_inicio === s.hora_inicio;
                       return (
                         <Pressable
-                          key={s.hora_inicio}
+                          key={`${e.id_espacio}-${s.hora_inicio}`}
                           onPress={() =>
-                            setSlot({ id_espacio: e.id_espacio, codigo: e.codigo, hora_inicio: s.hora_inicio, hora_fin: s.hora_fin })
+                            setSlot({
+                              id_espacio: e.id_espacio,
+                              codigo: e.codigo,
+                              hora_inicio: s.hora_inicio,
+                              hora_fin: s.hora_fin,
+                            })
                           }
                           style={[
                             styles.slot,
@@ -317,7 +343,8 @@ export default function NuevaReservaScreen() {
                               ? { backgroundColor: theme.primary, borderColor: theme.primary }
                               : { backgroundColor: theme.backgroundElement, borderColor: theme.border },
                           ]}>
-                          <Text style={{ fontWeight: '700', color: activo ? '#ffffff' : theme.text }}>{s.hora_inicio}</Text>
+                          <Text style={{ fontWeight: '800', color: activo ? '#ffffff' : theme.text }}>{s.hora_inicio}</Text>
+                          <Text style={{ fontSize: 10, color: activo ? '#d1fae5' : theme.textTertiary }}>{s.hora_fin}</Text>
                         </Pressable>
                       );
                     })}
@@ -327,7 +354,7 @@ export default function NuevaReservaScreen() {
             )}
             {disp && disp.espacios.length > 0 && (
               <Text style={{ color: theme.textTertiary, fontSize: 12 }}>
-                Duración: {disp.duracion_min} min. Cada hora muestra el inicio del servicio.
+                Duración: {disp.duracion_min} min. Cada casilla muestra inicio y fin del servicio.
               </Text>
             )}
           </Card>
@@ -404,10 +431,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
   },
   slot: {
-    minHeight: 38,
-    minWidth: 68,
+    minHeight: 44,
+    minWidth: 72,
     paddingHorizontal: Spacing.three,
-    borderRadius: BorderRadius.full,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',

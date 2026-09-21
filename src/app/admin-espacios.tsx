@@ -30,7 +30,13 @@ interface Tramo {
 }
 type Borrador = Record<number, Tramo[]>;
 
-const HORA = /^\d{1,2}:\d{2}$/;
+const HORA = /^([01]?\d|2[0-3]):[0-5]\d$/;
+
+const aMinutos = (hhmm: string): number | null => {
+  if (!HORA.test(hhmm.trim())) return null;
+  const [h, m] = hhmm.trim().split(':').map(Number);
+  return h * 60 + m;
+};
 
 const aBorrador = (horarios: HorarioAtencion[]): Borrador => {
   const b: Borrador = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
@@ -38,8 +44,19 @@ const aBorrador = (horarios: HorarioAtencion[]): Borrador => {
   return b;
 };
 
-// TODO(Erick): primera versión completa de RF-05, hecha para poder probar las reservas. Es tuya:
-// puedes modificarla o reemplazarla por completo (bloqueos puntuales, festivos, etc.).
+const plantillaLunesSabado = (): Borrador => {
+  const b: Borrador = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+  for (let d = 1; d <= 6; d++) b[d] = [{ inicio: '08:00', fin: '18:00' }];
+  return b;
+};
+
+const resumenHorario = (horarios: HorarioAtencion[]): string => {
+  if (horarios.length === 0) return 'Sin horario de atención: no recibe reservas';
+  const porDia = new Set(horarios.map((h) => h.dia_semana));
+  return `${porDia.size} día(s) · ${horarios.length} tramo(s) semanales`;
+};
+
+/** RF-05: espacios de lavado y horario semanal de atención. */
 export default function AdminEspaciosScreen() {
   const scheme = useColorScheme();
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
@@ -51,10 +68,15 @@ export default function AdminEspaciosScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [nuevoCodigo, setNuevoCodigo] = useState('');
   const [creando, setCreando] = useState(false);
+  const [conPlantilla, setConPlantilla] = useState(true);
 
   const [editando, setEditando] = useState<string | null>(null);
   const [borrador, setBorrador] = useState<Borrador>({ 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] });
   const [guardando, setGuardando] = useState(false);
+
+  const [editCodigoId, setEditCodigoId] = useState<string | null>(null);
+  const [codigoDraft, setCodigoDraft] = useState('');
+  const [guardandoCodigo, setGuardandoCodigo] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && !isAdmin) router.replace('/');
@@ -78,12 +100,28 @@ export default function AdminEspaciosScreen() {
   if (!isAdmin) return null;
 
   const crear = async () => {
-    const codigo = nuevoCodigo.trim();
+    const codigo = nuevoCodigo.trim().toUpperCase();
     if (!codigo) return;
     setCreando(true);
     try {
-      await espaciosService.crear(codigo);
+      const horarios: HorarioAtencion[] | undefined = conPlantilla
+        ? Object.entries(plantillaLunesSabado()).flatMap(([dia, tramos]) =>
+            tramos.map((t) => ({
+              dia_semana: Number(dia),
+              hora_inicio: t.inicio,
+              hora_fin: t.fin,
+            }))
+          )
+        : undefined;
+      await espaciosService.crear(codigo, true, horarios);
       setNuevoCodigo('');
+      notify(
+        'Espacio creado',
+        conPlantilla
+          ? `${codigo} listo con horario lun-sáb 08:00-18:00. Puedes ajustarlo abajo.`
+          : `${codigo} creado. Define su horario para recibir reservas.`,
+        'success'
+      );
       await load();
     } catch (err) {
       notify('No se pudo crear el espacio', errorMessage(err), 'warning');
@@ -98,6 +136,26 @@ export default function AdminEspaciosScreen() {
       await load();
     } catch (err) {
       notify('Error', errorMessage(err), 'error');
+    }
+  };
+
+  const abrirEditarCodigo = (e: Espacio) => {
+    setEditCodigoId(e.id_espacio);
+    setCodigoDraft(e.codigo);
+  };
+
+  const guardarCodigo = async (e: Espacio) => {
+    const codigo = codigoDraft.trim().toUpperCase();
+    if (!codigo) return notify('Código vacío', 'Ingresa un código para el espacio.');
+    setGuardandoCodigo(true);
+    try {
+      await espaciosService.actualizar(e.id_espacio, codigo, e.activo);
+      setEditCodigoId(null);
+      await load();
+    } catch (err) {
+      notify('No se pudo renombrar', errorMessage(err), 'warning');
+    } finally {
+      setGuardandoCodigo(false);
     }
   };
 
@@ -129,12 +187,27 @@ export default function AdminEspaciosScreen() {
       6: b[1].map((t) => ({ ...t })),
     }));
 
+  const aplicarPlantilla = () => setBorrador(plantillaLunesSabado());
+
   const guardarHorarios = async (e: Espacio) => {
     const horarios: HorarioAtencion[] = [];
     for (const { dia, nombre } of DIAS) {
-      for (const t of borrador[dia]) {
-        if (!HORA.test(t.inicio.trim()) || !HORA.test(t.fin.trim())) {
-          return notify('Hora inválida', `Revisa las horas de ${nombre}: usa el formato HH:MM, por ejemplo 08:00.`);
+      const tramos = [...borrador[dia]].sort((a, b) => (aMinutos(a.inicio) ?? 0) - (aMinutos(b.inicio) ?? 0));
+      for (let i = 0; i < tramos.length; i++) {
+        const t = tramos[i];
+        const ini = aMinutos(t.inicio);
+        const fin = aMinutos(t.fin);
+        if (ini === null || fin === null) {
+          return notify('Hora inválida', `Revisa las horas de ${nombre}: usa HH:MM (ej. 08:00).`);
+        }
+        if (fin <= ini) {
+          return notify('Rango inválido', `En ${nombre} la hora de fin debe ser posterior a la de inicio.`);
+        }
+        if (i > 0) {
+          const prevFin = aMinutos(tramos[i - 1].fin);
+          if (prevFin !== null && ini < prevFin) {
+            return notify('Tramos solapados', `Hay tramos que se cruzan el ${nombre}.`);
+          }
         }
         horarios.push({ dia_semana: dia, hora_inicio: t.inicio.trim(), hora_fin: t.fin.trim() });
       }
@@ -156,7 +229,7 @@ export default function AdminEspaciosScreen() {
   return (
     <Screen
       title="Espacios y Horarios"
-      subtitle="RF-05: define los espacios de lavado y su horario de atención semanal. Los clientes solo pueden reservar dentro de estos horarios."
+      subtitle="Define los espacios de lavado y su horario semanal. Los clientes solo pueden reservar dentro de estos tramos."
       refreshing={refreshing}
       onRefresh={() => {
         setRefreshing(true);
@@ -183,6 +256,16 @@ export default function AdminEspaciosScreen() {
             style={{ marginBottom: Spacing.three }}
           />
         </View>
+        <Pressable onPress={() => setConPlantilla((v) => !v)} style={styles.checkRow}>
+          <Ionicons
+            name={conPlantilla ? 'checkbox' : 'square-outline'}
+            size={20}
+            color={conPlantilla ? theme.primary : theme.textTertiary}
+          />
+          <Text style={{ color: theme.textSecondary, flex: 1, fontSize: 13 }}>
+            Crear con horario lun–sáb 08:00–18:00 (recomendado)
+          </Text>
+        </Pressable>
       </Card>
 
       {loading ? (
@@ -197,16 +280,32 @@ export default function AdminEspaciosScreen() {
       ) : (
         espacios.map((e) => {
           const abierto = editando === e.id_espacio;
+          const editandoCodigo = editCodigoId === e.id_espacio;
           return (
             <Card key={e.id_espacio} style={styles.card}>
               <View style={styles.top}>
                 <View style={{ flex: 1, minWidth: 160 }}>
-                  <Text style={[styles.name, { color: theme.text }]}>{e.codigo}</Text>
-                  <Text style={{ color: theme.textTertiary, fontSize: 12 }}>
-                    {e.horarios.length === 0
-                      ? 'Sin horario de atención: no recibe reservas'
-                      : `${e.horarios.length} tramo(s) de atención por semana`}
-                  </Text>
+                  {editandoCodigo ? (
+                    <View style={styles.inline}>
+                      <View style={{ flex: 1 }}>
+                        <Input
+                          value={codigoDraft}
+                          onChangeText={setCodigoDraft}
+                          autoCapitalize="characters"
+                          maxLength={20}
+                          style={{ marginBottom: 0 }}
+                        />
+                      </View>
+                      <Button title="OK" size="sm" loading={guardandoCodigo} onPress={() => guardarCodigo(e)} />
+                      <Button title="X" size="sm" variant="outline" onPress={() => setEditCodigoId(null)} />
+                    </View>
+                  ) : (
+                    <Pressable onPress={() => abrirEditarCodigo(e)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={[styles.name, { color: theme.text }]}>{e.codigo}</Text>
+                      <Ionicons name="create-outline" size={16} color={theme.textTertiary} />
+                    </Pressable>
+                  )}
+                  <Text style={{ color: theme.textTertiary, fontSize: 12, marginTop: 4 }}>{resumenHorario(e.horarios)}</Text>
                 </View>
                 <View style={styles.switchBox}>
                   <Badge label={e.activo ? 'Activo' : 'Inactivo'} status={e.activo ? 'disponible' : 'cancelado'} size="sm" />
@@ -268,7 +367,8 @@ export default function AdminEspaciosScreen() {
 
                   <View style={styles.editorActions}>
                     <Button title="Guardar horarios" loading={guardando} onPress={() => guardarHorarios(e)} />
-                    <Button title="Copiar lunes a martes-sábado" variant="outline" onPress={copiarLunes} />
+                    <Button title="Copiar lunes → mar-sáb" variant="outline" onPress={copiarLunes} />
+                    <Button title="Plantilla 08-18" variant="outline" onPress={aplicarPlantilla} />
                   </View>
                 </View>
               )}
@@ -284,6 +384,7 @@ const styles = StyleSheet.create({
   newCard: { padding: Spacing.four, marginBottom: Spacing.four },
   section: { fontSize: 16, fontWeight: '800', marginBottom: Spacing.three },
   inline: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  checkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginTop: Spacing.one },
   card: { padding: Spacing.four, marginBottom: Spacing.three },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.three, flexWrap: 'wrap' },
   name: { fontSize: 18, fontWeight: '900' },
