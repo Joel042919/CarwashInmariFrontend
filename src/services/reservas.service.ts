@@ -1,5 +1,6 @@
 import { api } from './api';
 import {
+  AgendaDia,
   CrearReservaPayload,
   CrearTrabajadorPayload,
   DisponibilidadResponse,
@@ -20,8 +21,9 @@ export const vehiculosService = {
 
 export const espaciosService = {
   listar: (): Promise<Espacio[]> => api.get<Espacio[]>('/espacios'),
-  crear: (codigo: string, activo = true): Promise<Espacio> =>
-    api.post<Espacio>('/admin/espacios', { codigo, activo }),
+  obtener: (id: string): Promise<Espacio> => api.get<Espacio>(`/espacios/${id}`),
+  crear: (codigo: string, activo = true, horarios?: HorarioAtencion[]): Promise<Espacio> =>
+    api.post<Espacio>('/admin/espacios', { codigo, activo, horarios }),
   actualizar: (id: string, codigo: string, activo: boolean): Promise<Espacio> =>
     api.put<Espacio>(`/admin/espacios/${id}`, { codigo, activo }),
   guardarHorarios: (id: string, horarios: HorarioAtencion[]): Promise<Espacio> =>
@@ -55,6 +57,8 @@ export const reservasService = {
     if (params?.fecha) qs.push(`fecha=${params.fecha}`);
     return api.get<Reserva[]>(`/admin/reservas${qs.length ? `?${qs.join('&')}` : ''}`);
   },
+  agenda: (fecha: string): Promise<AgendaDia> =>
+    api.get<AgendaDia>(`/admin/reservas/agenda?fecha=${encodeURIComponent(fecha)}`),
   trabajadoresDisponibles: (id: string): Promise<TrabajadorDisponible[]> =>
     api.get<TrabajadorDisponible[]>(`/admin/reservas/${id}/trabajadores`),
   programar: (id: string, trabajadores: string[]): Promise<Reserva> =>

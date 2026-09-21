@@ -395,6 +395,19 @@ export interface TrabajadorDisponible {
   ocupado: boolean;
 }
 
+/** Agenda del día agrupada por espacio (RF-09). */
+export interface AgendaEspacio {
+  id_espacio: string;
+  codigo: string;
+  activo: boolean;
+  reservas: Reserva[];
+}
+
+export interface AgendaDia {
+  fecha: string;
+  espacios: AgendaEspacio[];
+}
+
 // ---------------------------------------------------------------------------
 // Trabajadores (alta mínima para asignar atenciones)
 // ---------------------------------------------------------------------------

@@ -123,17 +123,25 @@ export default function ServiciosScreen() {
                   <Badge label="Sin documentación" status="disponible" size="sm" />
                 )}
               </View>
-              {s.requiere_documento ? (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: Spacing.three }}>
                 <Button
-                  title="Adjuntar documento"
+                  title="Reservar"
                   size="sm"
-                  variant="outline"
-                  style={{ marginTop: Spacing.three }}
                   onPress={() =>
-                    router.push({ pathname: '/documentos', params: { id_servicio: s.id_servicio } })
+                    router.push({ pathname: '/nueva-reserva', params: { servicios: s.id_servicio } })
                   }
                 />
-              ) : null}
+                {s.requiere_documento ? (
+                  <Button
+                    title="Adjuntar documento"
+                    size="sm"
+                    variant="outline"
+                    onPress={() =>
+                      router.push({ pathname: '/documentos', params: { id_servicio: s.id_servicio } })
+                    }
+                  />
+                ) : null}
+              </View>
             </Card>
           ))}
         </View>

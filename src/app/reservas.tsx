@@ -62,6 +62,7 @@ export default function ReservasScreen() {
     if (!ok) return;
     try {
       await reservasService.cancelar(r.id_reserva);
+      notify('Reserva cancelada', 'El horario quedó liberado.', 'success');
       await load();
     } catch (err) {
       notify('No se pudo cancelar', errorMessage(err), 'error');
@@ -71,7 +72,7 @@ export default function ReservasScreen() {
   return (
     <Screen
       title="Mis Reservas"
-      subtitle="Consulta, reprograma o cancela tus reservas."
+      subtitle="Consulta, reprograma o cancela tus reservas activas."
       refreshing={refreshing}
       onRefresh={() => {
         setRefreshing(true);
@@ -101,6 +102,14 @@ export default function ReservasScreen() {
           <Text style={{ color: theme.textSecondary, marginTop: Spacing.two, textAlign: 'center' }}>
             {vista === 'activas' ? 'No tienes reservas activas.' : 'Aún no tienes reservas en el historial.'}
           </Text>
+          {vista === 'activas' && (
+            <Button
+              title="Crear reserva"
+              size="sm"
+              style={{ marginTop: Spacing.three }}
+              onPress={() => router.push('/nueva-reserva')}
+            />
+          )}
         </Card>
       ) : (
         visibles.map((r) => {
@@ -140,6 +149,12 @@ export default function ReservasScreen() {
                   containerStyle={{ marginTop: Spacing.two }}>
                   Atenderá: {r.trabajadores.map((t) => t.nombre).join(', ')}
                 </IconText>
+              )}
+
+              {r.estado === 'reprogramada' && (
+                <Text style={{ color: theme.warning, fontSize: 12, marginTop: Spacing.two }}>
+                  Esperando nueva confirmación y asignación de personal.
+                </Text>
               )}
 
               {r.estado === 'cancelada' && r.motivo_cancelacion ? (
