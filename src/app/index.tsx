@@ -38,6 +38,7 @@ function DashboardContent() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('todos');
+  const [showMoreAccess, setShowMoreAccess] = useState(false);
 
   const loadData = async () => {
     // Protección contra llamadas sin token
@@ -83,6 +84,27 @@ function DashboardContent() {
 
   const ultimaReserva = historial?.reservas?.[0];
   const ultimoPago = historial?.pagos?.[0];
+  const moreAccess = isAdmin
+    ? [
+        { name: 'Reservas', href: '/admin-reservas', icon: 'calendar-outline' },
+        { name: 'Espacios y horarios', href: '/admin-espacios', icon: 'grid-outline' },
+        { name: 'Trabajadores', href: '/admin-trabajadores', icon: 'people-outline' },
+        { name: 'Productos', href: '/admin-productos', icon: 'cube-outline' },
+        { name: 'Pedidos', href: '/admin-pedidos', icon: 'receipt-outline' },
+        { name: 'Documentos', href: '/admin-documentos', icon: 'document-text-outline' },
+        { name: 'Reportes', href: '/admin-reportes', icon: 'bar-chart-outline' },
+        { name: 'Reclamos', href: '/admin-reclamos', icon: 'chatbubble-ellipses-outline' },
+      ] as const
+    : [
+        { name: 'Nueva reserva', href: '/nueva-reserva', icon: 'add-circle-outline' },
+        { name: 'Mis reservas', href: '/reservas', icon: 'calendar-outline' },
+        { name: 'Vehículos', href: '/vehiculos', icon: 'car-sport-outline' },
+        { name: 'Historial', href: '/historial', icon: 'time-outline' },
+        { name: 'Productos', href: '/productos', icon: 'cart-outline' },
+        { name: 'Pedidos', href: '/pedidos', icon: 'receipt-outline' },
+        { name: 'Documentos', href: '/documentos', icon: 'document-text-outline' },
+        { name: 'Reclamos', href: '/reclamos', icon: 'chatbubble-ellipses-outline' },
+      ] as const;
 
   return (
     <ResponsiveLayout>
@@ -117,7 +139,8 @@ function DashboardContent() {
                     setSelectedFilter(tab);
                     if (tab === 'reclamos') router.push('/reclamos');
                     if (tab === 'admin-reclamos') router.push('/admin-reclamos');
-                    if (tab === 'servicios' || tab === 'pagos') router.push('/historial');
+                    if (tab === 'servicios') router.push(isAdmin ? '/admin-servicios' : '/servicios');
+                    if (tab === 'pagos') router.push(isAdmin ? '/admin-pagos' : '/mis-pagos');
                   }}
                   style={[
                     styles.categoryPill,
@@ -139,6 +162,14 @@ function DashboardContent() {
               ))}
             </View>
           </View>
+
+          <Card style={styles.moreAccessCard}>
+            <Pressable onPress={() => setShowMoreAccess((value) => !value)} style={styles.moreAccessHeader}>
+              <View><Text style={[styles.moreAccessTitle, { color: theme.text }]}>Más accesos</Text><Text style={{ color: theme.textSecondary, fontSize: 12 }}>Herramientas disponibles para tu perfil</Text></View>
+              <Ionicons name={showMoreAccess ? 'chevron-up' : 'chevron-down'} size={22} color={theme.accent} />
+            </Pressable>
+            {showMoreAccess && <View style={styles.moreAccessGrid}>{moreAccess.map((item) => <Pressable key={item.href} onPress={() => router.push(item.href)} style={[styles.moreAccessItem, { backgroundColor: theme.surface, borderColor: theme.border }]}><Ionicons name={item.icon} size={22} color={theme.accent} /><Text style={[styles.moreAccessName, { color: theme.text }]}>{item.name}</Text></Pressable>)}</View>}
+          </Card>
 
           {/* HERO CAR CARD (Copiando el Hero de Volvo EX30 / BMW en capturas) */}
           <Card style={styles.heroCard}>
@@ -419,6 +450,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 0.5,
   },
+  moreAccessCard: { padding: Spacing.four, marginBottom: Spacing.four },
+  moreAccessHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  moreAccessTitle: { fontSize: 17, fontWeight: '800' },
+  moreAccessGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: Spacing.three },
+  moreAccessItem: { flexGrow: 1, flexBasis: 145, minHeight: 82, borderWidth: 1, borderRadius: BorderRadius.lg, padding: Spacing.three, gap: 6, justifyContent: 'center' },
+  moreAccessName: { fontWeight: '700', fontSize: 13 },
 
   // Hero Car Card
   heroCard: {

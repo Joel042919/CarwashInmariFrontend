@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -67,23 +67,17 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
     return true;
   });
 
-  // En móvil el perfil ya tiene su botón en el encabezado; se omite de la barra inferior
-  // para que quepan los demás íconos (el admin llega a 7).
-  const mobileNavItems = filteredNavItems.filter((item) => item.href !== '/perfil');
+  // La barra móvil es deliberadamente corta: la navegación completa se ofrece con
+  // icono y nombre desde el dashboard, evitando una tira horizontal difícil de usar.
+  const mobileRoutes = role === 'trabajador'
+    ? ['/mis-asignaciones']
+    : isAdmin
+      ? ['/', '/atenciones', '/admin-servicios', '/admin-pagos']
+      : ['/', '/atenciones', '/servicios', '/mis-pagos'];
+  const mobileNavItems = mobileRoutes
+    .map((href) => filteredNavItems.find((item) => item.href === href))
+    .filter((item): item is NavItem => Boolean(item));
   const insets = useSafeAreaInsets();
-
-  // Con más de 6 ítems la barra inferior se desplaza en horizontal (cada ítem mide 46px).
-  const NAV_ITEM_WIDTH = 46;
-  const scrollNav = mobileNavItems.length > 6;
-  const navScrollRef = useRef<ScrollView>(null);
-  const activeNavIndex = mobileNavItems.findIndex((i) =>
-    i.href === '/' ? pathname === '/' || pathname === '' : pathname.startsWith(i.href)
-  );
-  useEffect(() => {
-    if (scrollNav && activeNavIndex >= 0) {
-      navScrollRef.current?.scrollTo({ x: Math.max(0, activeNavIndex * NAV_ITEM_WIDTH - 90), animated: false });
-    }
-  }, [scrollNav, activeNavIndex]);
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/' || pathname === '';
@@ -279,14 +273,12 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
                   onPress={() => router.push(item.href as any)}
                   style={({ pressed }) => [
                     styles.floatingNavItem,
-                    scrollNav && { flex: 0, width: NAV_ITEM_WIDTH },
                     active && styles.floatingNavItemActive,
                     pressed && { opacity: 0.7 },
                   ]}>
                   <View
                     style={[
                       styles.navIconWrapper,
-                      scrollNav && { width: 38 },
                       active && { backgroundColor: '#ffffff' },
                     ]}>
                     <Ionicons
@@ -298,17 +290,7 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
                 </Pressable>
               );
             });
-            return scrollNav ? (
-              <ScrollView
-                ref={navScrollRef}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.navScrollContent}>
-                {botones}
-              </ScrollView>
-            ) : (
-              botones
-            );
+            return botones;
           })()}
         </View>
       </View>
@@ -494,13 +476,14 @@ const styles = StyleSheet.create({
   floatingBottomNavPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
+    gap: Spacing.one,
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.two,
     borderRadius: BorderRadius.full, // Floating Pill shape
     borderWidth: 1,
-    width: '100%',
-    maxWidth: 520,
+    alignSelf: 'center',
+    minHeight: 54,
     ...Platform.select({
       web: {
         boxShadow: '0 10px 30px rgba(15, 23, 42, 0.12)',
@@ -516,20 +499,16 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  // Cada ítem toma una fracción igual del ancho y el círculo del ícono se achica
-  // (hasta 42px) cuando hay muchos ítems en una pantalla angosta.
   floatingNavItem: {
-    flex: 1,
-    padding: Spacing.half,
+    width: 48,
+    padding: 4,
     alignItems: 'center',
     justifyContent: 'center',
   },
   floatingNavItemActive: {},
-  navScrollContent: { alignItems: 'center' },
   navIconWrapper: {
-    width: '100%',
-    maxWidth: 42,
-    aspectRatio: 1,
+    width: 40,
+    height: 40,
     borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
