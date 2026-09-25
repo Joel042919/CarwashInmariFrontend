@@ -16,6 +16,7 @@ import { useAuth } from '@/context/AuthContext';
 import { canAccessRoute } from '@/constants/access';
 import { Colors, BREAKPOINT_DESKTOP, Spacing, BorderRadius, MaxContentWidth } from '@/constants/theme';
 import { Badge } from '@/components/ui/Badge';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 interface NavItem {
   name: string;
@@ -178,6 +179,8 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
                 <Ionicons name="notifications-outline" size={18} color={theme.text} />
               </Pressable>
 
+              <ThemeToggle style={[styles.circleActionBtn, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]} />
+
               <Pressable
                 onPress={() => router.push('/perfil')}
                 style={[
@@ -234,6 +237,7 @@ export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ chil
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+          <ThemeToggle style={[styles.circleActionBtnSm, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]} />
           <Pressable
             onPress={() => router.push('/perfil')}
             style={[styles.circleActionBtnSm, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>

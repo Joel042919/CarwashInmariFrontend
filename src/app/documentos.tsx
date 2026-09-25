@@ -7,15 +7,15 @@ import { Screen } from '@/components/layout/Screen';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { FilterChips } from '@/components/ui/FilterChips';
 import { RequisitosDocumentales } from '@/components/ui/RequisitosDocumentales';
 import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { documentosService } from '@/services/documentos.service';
 import { serviciosService } from '@/services/servicios.service';
+import { reservasService } from '@/services/reservas.service';
 import { resolveMediaUrl } from '@/services/api';
-import { DocumentoPrevio, Servicio } from '@/types';
+import { DocumentoPrevio, Reserva, Servicio } from '@/types';
 import { badgeStatus, errorMessage, notify } from '@/utils/dialog';
 
 // Pantalla del cliente para RF-07. El flujo de reservas puede abrirla con
@@ -30,6 +30,7 @@ export default function DocumentosScreen() {
   const [documentos, setDocumentos] = useState<DocumentoPrevio[]>([]);
   const [servicios, setServicios] = useState<Servicio[]>([]);
   const [idReserva, setIdReserva] = useState(params.id_reserva ?? '');
+  const [reservaAsociada, setReservaAsociada] = useState<Reserva | null>(null);
   const [idServicio, setIdServicio] = useState(params.id_servicio ?? '');
   const [archivo, setArchivo] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,19 +49,25 @@ export default function DocumentosScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [docs, srv] = await Promise.all([
+      const [docs, srv, reservas] = await Promise.all([
         documentosService.misDocumentos(),
         serviciosService.listar(),
+        reservasService.misReservas(),
       ]);
       setDocumentos(docs);
       setServicios(srv.filter((s) => s.requiere_documento));
+      const reserva = params.id_reserva
+        ? reservas.find((item) => item.id_reserva === params.id_reserva) ?? null
+        : reservas.find((item) => item.requiere_documento && !['cancelada', 'completada'].includes(item.estado)) ?? null;
+      setReservaAsociada(reserva);
+      setIdReserva(reserva?.id_reserva ?? params.id_reserva ?? '');
     } catch (err) {
       notify('Error', errorMessage(err, 'No se pudieron cargar tus documentos'), 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [params.id_reserva]);
 
   useEffect(() => {
     if (isAuthenticated && !isAdmin) load();
@@ -70,35 +77,29 @@ export default function DocumentosScreen() {
 
   const elegirPdf = async () => {
     const res = await DocumentPicker.getDocumentAsync({
-      type: 'application/pdf',
-      copyToCacheDirectory: true,
-      multiple: false,
+      type: 'application/pdf', copyToCacheDirectory: true, multiple: false,
     });
     if (!res.canceled && res.assets.length > 0) {
-      const asset = res.assets[0];
-      if (asset.size && asset.size > 10 * 1024 * 1024) {
+      const selected = res.assets[0];
+      if (selected.size && selected.size > 10 * 1024 * 1024) {
         notify('Archivo muy grande', 'El PDF no puede superar los 10MB.');
         return;
       }
-      setArchivo(asset);
+      setArchivo(selected);
     }
   };
 
   const enviar = async () => {
-    if (!idReserva.trim()) return notify('Campo requerido', 'Ingresa el código de tu reserva');
+    if (!idReserva) return notify('Reserva requerida', 'No encontramos una reserva activa que requiera documentación.');
     if (!idServicio) return notify('Campo requerido', 'Selecciona el servicio que requiere el documento');
     if (!archivo) return notify('Campo requerido', 'Selecciona el PDF firmado');
 
     setEnviando(true);
     try {
       await documentosService.subir({
-        id_reserva: idReserva.trim(),
+        id_reserva: idReserva,
         id_servicio: idServicio,
-        pdf: {
-          uri: archivo.uri,
-          name: archivo.name || 'documento.pdf',
-          type: archivo.mimeType || 'application/pdf',
-        },
+        pdf: { uri: archivo.uri, name: archivo.name || 'documento.pdf', type: archivo.mimeType || 'application/pdf' },
       });
       setArchivo(null);
       notify('Documento enviado', 'Un administrador lo revisará y validará.', 'success');
@@ -121,20 +122,25 @@ export default function DocumentosScreen() {
         load();
       }}>
       {/* Si se llega desde una reserva (?id_reserva=...) se muestra qué documentos exige y su estado */}
-      {params.id_reserva ? (
-        <RequisitosDocumentales key={`${params.id_reserva}-${refreshKey}`} idReserva={params.id_reserva} />
+      {idReserva ? (
+        <RequisitosDocumentales key={`${idReserva}-${refreshKey}`} idReserva={idReserva} />
       ) : null}
 
       <Card style={styles.formCard}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Adjuntar documento</Text>
 
-        <Input
-          label="Código de reserva"
-          placeholder="ID de la reserva"
-          value={idReserva}
-          onChangeText={setIdReserva}
-          autoCapitalize="none"
-        />
+        {reservaAsociada ? (
+          <View style={[styles.reservaInfo, { backgroundColor: theme.accentBg }]}>
+            <Ionicons name="calendar-outline" size={18} color={theme.accent} />
+            <Text style={{ color: theme.text, flex: 1 }}>
+              Documento asociado a tu reserva: {reservaAsociada.vehiculo} ({reservaAsociada.placa}) · {reservaAsociada.fecha_reserva}
+            </Text>
+          </View>
+        ) : (
+          <Text style={{ color: theme.warning, marginBottom: Spacing.three }}>
+            No tienes una reserva activa que requiera documentación.
+          </Text>
+        )}
 
         <Text style={[styles.label, { color: theme.textSecondary }]}>Servicio</Text>
         {servicios.length === 0 ? (
@@ -212,6 +218,10 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderRadius: 14,
     marginBottom: Spacing.three,
+  },
+  reservaInfo: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.two,
+    padding: Spacing.three, borderRadius: 12, marginBottom: Spacing.three,
   },
   docCard: { padding: Spacing.four, marginBottom: Spacing.three },
   docTop: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.two, flexWrap: 'wrap' },

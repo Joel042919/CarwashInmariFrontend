@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { FilterChips } from '@/components/ui/FilterChips';
-import { PagoCard } from '@/components/pagos/PagoCard';
+import { PagoCard, ResumenOperacion } from '@/components/pagos/PagoCard';
 import { Colors } from '@/constants/theme';
 import { nuevaClaveIdempotencia, pagosService } from '@/services/pagos.service';
 import { confirmAction, errorMessage, notify } from '@/utils/dialog';
@@ -73,6 +73,7 @@ export default function AdminPagosScreen() {
     {!!error && <Card style={{ padding: 16, gap: 8 }}><Text accessibilityRole="alert" style={{ color: theme.danger }}>{error}</Text><Button title="Reintentar" onPress={load} /></Card>}
     {seleccion && <Card style={{ padding: 18, gap: 10 }}>
       <Text style={{ color: theme.text, fontSize: 18, fontWeight: '800' }}>Cobrar a {seleccion.cliente}</Text>
+      <ResumenOperacion tipo={seleccion.tipo} detalle={seleccion.detalle} idOperacion={seleccion.id_operacion} />
       <Text style={{ color: theme.text, fontSize: 22, fontWeight: '800' }}>S/ {Number(seleccion.monto).toFixed(2)}</Text>
       <FilterChips value={metodo} onChange={(value) => setMetodo(value as MetodoPago)} options={metodos} />
       {metodo !== 'efectivo' && <Input label="Referencia de la operación (opcional)" value={referencia} onChangeText={setReferencia} maxLength={100} />}
@@ -89,6 +90,7 @@ export default function AdminPagosScreen() {
       {pendientes.map((item) => <Card key={`${item.tipo}-${item.id_operacion}`} style={{ padding: 18, gap: 8 }}>
         <Text style={{ color: theme.text, fontWeight: '800', fontSize: 17 }}>{item.cliente}</Text>
         <Text style={{ color: theme.textSecondary }}>{item.descripcion} · {item.tipo}</Text>
+        <ResumenOperacion tipo={item.tipo} detalle={item.detalle} idOperacion={item.id_operacion} />
         <Text style={{ color: theme.text, fontWeight: '800', fontSize: 20 }}>S/ {Number(item.monto).toFixed(2)}</Text>
         <Button title="Registrar cobro" disabled={saving} onPress={() => {
           setSeleccion(item);

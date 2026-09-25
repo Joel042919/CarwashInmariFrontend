@@ -6,6 +6,8 @@ export interface DetallePago {
   cliente?: string;
   correo?: string;
   placa?: string;
+  id_reserva?: string;
+  fecha_reserva?: string;
   servicios?: { nombre: string; cantidad: number; precio_unitario: number | string }[];
   productos?: { nombre: string; cantidad: number; precio_unitario: number | string }[];
 }

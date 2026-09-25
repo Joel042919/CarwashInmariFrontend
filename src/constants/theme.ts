@@ -8,7 +8,7 @@ import { Platform } from 'react-native';
 // Criterios: sin negro puro ni verde neón; texto en blanco cálido (no #fff); dos verdes con
 // función distinta: `primary` (relleno de botones, texto blanco encima, contraste AA) y
 // `accent` (texto e íconos sobre fondo oscuro, más claro para que se lea bien).
-const palette = {
+const darkPalette = {
   // Texto
   text: '#eaf1ed',
   textSecondary: '#a7b5ae',
@@ -46,10 +46,18 @@ const palette = {
   surface: '#1c2520',
 } as const;
 
-export const Colors = {
-  light: palette,
-  dark: palette,
+const lightPalette = {
+  text: '#14251d', textSecondary: '#50645a', textTertiary: '#74867c',
+  background: '#f5f8f6', backgroundElement: '#ffffff', backgroundSelected: '#d8f0e5',
+  border: '#d7e2db', borderLight: '#e7eee9', nav: '#ffffff', navText: '#4f675b', navActive: '#167553',
+  primary: '#167553', primaryHover: '#105d41', primaryLight: '#d8f0e5', primaryText: '#ffffff',
+  accent: '#167553', accentBg: 'rgba(22, 117, 83, 0.12)', accentDark: '#167553',
+  sky: '#276f9e', skyBg: 'rgba(39, 111, 158, 0.12)', secondary: '#edf3ef', secondaryText: '#41564b',
+  success: '#167553', successBg: 'rgba(22, 117, 83, 0.12)', warning: '#9a6814', warningBg: 'rgba(217, 164, 65, 0.16)',
+  danger: '#b23e3e', dangerBg: 'rgba(178, 62, 62, 0.12)', card: '#ffffff', surface: '#edf3ef',
 } as const;
+
+export const Colors = { light: lightPalette, dark: darkPalette } as const;
 
 export type ThemeColor = keyof typeof Colors.light;
 

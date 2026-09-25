@@ -22,15 +22,11 @@ export const documentosService = {
     formData.append('id_servicio', payload.id_servicio);
 
     if (Platform.OS === 'web') {
-      const resp = await fetch(payload.pdf.uri);
-      const blob = await resp.blob();
-      formData.append('pdf', blob, payload.pdf.name);
+      const response = await fetch(payload.pdf.uri);
+      formData.append('pdf', await response.blob(), payload.pdf.name);
     } else {
-      formData.append('pdf', {
-        uri: payload.pdf.uri,
-        name: payload.pdf.name,
-        type: payload.pdf.type || 'application/pdf',
-      } as unknown as Blob);
+      // React Native fetch admite directamente archivos locales, sin cargarlos en memoria.
+      formData.append('pdf', payload.pdf as unknown as Blob);
     }
     return api.uploadMultipart<DocumentoPrevio>('/documentos', formData);
   },

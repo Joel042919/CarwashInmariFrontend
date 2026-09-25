@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/theme';
 import { DialogHost } from '@/components/ui/DialogHost';
+import { ThemeProvider } from '@/context/ThemeContext';
 
 function AuthGate() {
   const { isAuthenticated, isLoading, role } = useAuth();
@@ -52,10 +53,12 @@ function AuthGate() {
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <AuthGate />
-        <DialogHost />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AuthGate />
+          <DialogHost />
+        </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }
